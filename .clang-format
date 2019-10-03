@@ -1,0 +1,20 @@
+---
+Language:        Cpp
+BasedOnStyle:  Google
+Standard:  Cpp11 
+UseTab: Never
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterEnum: true
+  AfterStruct: true
+  SplitEmptyFunction: false
+  AfterNamespace: false
+AlignConsecutiveAssignments: true
+AlignOperands: true
+AlignTrailingComments: true
+FixNamespaceComments: true
+AlignEscapedNewlines: true
+AlignAfterOpenBracket: true
+IndentWidth: 4
+ColumnLimit: 150
+...
