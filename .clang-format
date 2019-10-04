@@ -18,3 +18,7 @@ AlignAfterOpenBracket: true
 IndentWidth: 4
 ColumnLimit: 150
 ...
+# ProtoBUF language by Google
+Language: Proto
+# Don't format .proto files.
+DisableFormat: false

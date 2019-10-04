@@ -5,7 +5,7 @@
 #include "common.h"
 
 namespace chord {
-class Node {
+class Node final {
    private:
     std::string ip;
     std::uint32_t port;

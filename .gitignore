@@ -39,4 +39,5 @@ build
 *.dylib
 *.egg-info
 
-# Ignore *.pb.*
+# Ignore third party
+third_party
