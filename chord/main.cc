@@ -84,11 +84,28 @@ int main(int argc, char* argv[]) {
     auto node = new chord::Node();
     init_node(result, node);
 
-    // called periodically 
+    // called periodically
     std::thread asyncthread(&chord::AsyncTimerQueue::timerLoop, &chord::AsyncTimerQueue::Instance());
     chord::AsyncTimerQueue::Instance().create(node->tv_fix_fingers, true, &chord::Node::fixFingers, node);
     chord::AsyncTimerQueue::Instance().create(node->tv_check_predecessor, true, &chord::Node::checkPredecessor, node);
     chord::AsyncTimerQueue::Instance().create(node->tv_stabilize, true, &chord::Node::stabilize, node);
+
+    std::string line;
+    while (1) {
+        std::cout << "> ";
+        std::getline(std::cin, line);
+        std::istringstream stream(line);
+        std::string cmd;
+        std::string key;
+        stream >> cmd >> key;
+        if (cmd == "Lookup") {
+            CHECK_EQ(key.empty(), false);
+            std::cout << node->lookup(key);
+        } else if (cmd == "PrintState") {
+            std::cout << node->dump();
+        }
+    }
+
     asyncthread.join();
     return 0;
 }

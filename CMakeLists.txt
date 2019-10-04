@@ -14,6 +14,7 @@ include(bazel)          # simplify cmake build interface
 include(compile)        # configure the compilation flag
 
 include(external/protobuf)
+include(external/openssl)
 include(external/gflags)
 include(external/glog)
 include(external/gtest)
