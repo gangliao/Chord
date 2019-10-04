@@ -10,6 +10,6 @@ namespace chord {
 typedef unsigned char Byte;
 
 /*! \brief A type for seconds */
-typedef double Second;
+typedef double Milliseconds;
 
 }  // namespace chord

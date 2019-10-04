@@ -25,9 +25,9 @@ class Node {
     struct sockaddr_in address;
     struct sockaddr_in join_address;
 
-    Second tv_stabilize;
-    Second tv_fix_fingers;
-    Second tv_check_predecessor;
+    Milliseconds tv_stabilize;
+    Milliseconds tv_fix_fingers;
+    Milliseconds tv_check_predecessor;
 
    public:
     /*! \brief creates a new Chord ring. */
@@ -53,12 +53,13 @@ class Node {
      */
     void fixFingers();
 
-   private:
     /**
      * \brief  checks whether predecessir has failed.
      * \note   called periodically.
      */
     void checkPredecessor();
+
+   private:
     /*! \brief n thinks it might be our predecessor. */
     void notify(const Node& n);
     /*! \brief asks node to find the successor of id. */

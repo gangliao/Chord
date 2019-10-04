@@ -3,8 +3,8 @@
 #include <glog/logging.h>
 
 #include "chord.h"
-#include "common/cxxopts.h"
 #include "common/async_timer_queue.h"
+#include "common/cxxopts.h"
 #include "node.h"
 
 void init_node(const cxxopts::ParseResult& result, chord::Node* node) {
@@ -30,27 +30,25 @@ void init_node(const cxxopts::ParseResult& result, chord::Node* node) {
     CHECK_GE(ts, 1) << "The time in milliseconds between invocations of 'stabilize' must be greater than or equal to 1";
     CHECK_LE(ts, 60000)
         << "The time in milliseconds between invocations of 'stabilize' must be less than or equal to 60000";
-    node->tv_stabilize = ts * 1.0e-3;
+    node->tv_stabilize = ts;
 
     int32_t tff = result["tff"].as<int32_t>();
     CHECK_GE(tff, 1)
         << "The time in milliseconds between invocations of 'fix fingers' must be greater than or equal to 1";
     CHECK_LE(tff, 60000)
         << "The time in milliseconds between invocations of 'fix fingers' must be less than or equal to 60000";
-    node->tv_fix_fingers = tff * 1.0e-3;
+    node->tv_fix_fingers = tff;
 
     int32_t tcp = result["tcp"].as<int32_t>();
     CHECK_GE(tcp, 1)
         << "The time in milliseconds between invocations of 'check predecessor' must be greater than or equal to 1";
     CHECK_LE(tcp, 60000)
         << "The time in milliseconds between invocations of 'check predecessor' must be less than or equal to 60000";
-    node->tv_check_predecessor = tcp * 1.0e-3;
+    node->tv_check_predecessor = tcp;
 
     int32_t r = result["r"].as<int32_t>();
-    CHECK_GE(r, 1)
-        << "The number of successors maintained must be must be greater than or equal to 1";
-    CHECK_LE(r, 32)
-        << "The number of successors maintained must be must be less than or equal to 32";
+    CHECK_GE(r, 1) << "The number of successors maintained must be must be greater than or equal to 1";
+    CHECK_LE(r, 32) << "The number of successors maintained must be must be less than or equal to 32";
     node->r = r;
 }
 
@@ -86,5 +84,11 @@ int main(int argc, char* argv[]) {
     auto node = new chord::Node();
     init_node(result, node);
 
+    // called periodically 
+    std::thread asyncthread(&chord::AsyncTimerQueue::timerLoop, &chord::AsyncTimerQueue::Instance());
+    chord::AsyncTimerQueue::Instance().create(node->tv_fix_fingers, true, &chord::Node::fixFingers, node);
+    chord::AsyncTimerQueue::Instance().create(node->tv_check_predecessor, true, &chord::Node::checkPredecessor, node);
+    chord::AsyncTimerQueue::Instance().create(node->tv_stabilize, true, &chord::Node::stabilize, node);
+    asyncthread.join();
     return 0;
 }

@@ -77,10 +77,10 @@ class AsyncTimerQueue {
 
     std::chrono::time_point<std::chrono::system_clock> startTime_;
 
-    std::unordered_map<int, std::vector<Event> > eventMap_;
+    std::unordered_map<int, std::vector<Event>> eventMap_;
 };
 
-typedef std::pair<int, std::vector<Event> > EventMapPair;
+typedef std::pair<int, std::vector<Event>> EventMapPair;
 
 struct CompareTimeout
 {
