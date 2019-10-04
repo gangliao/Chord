@@ -17,20 +17,29 @@ void Node::create() {}
 void Node::join(const Node& n) {}
 
 void Node::lookup(std::string key) {
-    std::stringstream a("< " + key + " ");
-
+    // key and its hash value
     uint8_t hash[SHA_DIGEST_LENGTH];
     SHA1((const uint8_t*)key.c_str(), key.size(), hash);
     std::cout << "< " + key + " ";
     print_hash(hash, SHA_DIGEST_LENGTH);
 
+    // The successor client's node information
     Node* succ = this->findSuccessor(hash);
     std::cout << "< ";
     print_hash(succ->getId(), SHA_DIGEST_LENGTH);
     std::cout << " " + succ->getAddr() + " " + std::to_string(succ->getPort());
 }
 
-void Node::dump() {}
+void Node::dump() {
+    // The Chord client's own node information
+    std::cout << "< Self ";
+    print_hash(this->getId(), SHA_DIGEST_LENGTH);
+    std::cout << " " + this->getAddr() + " " + std::to_string(this->getPort());    
+
+    // The node information for all nodes in the successor list
+
+    // The node information for all nodes in the finger table
+}
 
 void Node::stabilize() {}
 
