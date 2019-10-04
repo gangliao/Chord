@@ -12,14 +12,14 @@ void init_node(const cxxopts::ParseResult& result, chord::Node* node) {
     CHECK_GE(inet_pton(AF_INET, result["a"].as<std::string>().c_str(), &node->address.sin_addr.s_addr), 1)
         << "Invalid IPv4 address";
     node->address.sin_family = AF_INET;
-    node->addr = result["a"].as<std::string>(); 
+    node->addr               = result["a"].as<std::string>();
 
     // port
     int16_t port = result["p"].as<int16_t>();
     CHECK_GE(port, 1024) << "Invalid option for a port, must be greater than or equal to 1024";
     CHECK_LE(port, 65535) << "Invalid option for a port, must be less than or equal to 65535";
     node->address.sin_port = htons(port);
-    node->port = result["p"].as<std::int16_t>(); 
+    node->port             = result["p"].as<std::int16_t>();
 
     // join address
     CHECK_GE(inet_pton(AF_INET, result["ja"].as<std::string>().c_str(), &node->join_address.sin_addr.s_addr), 1)

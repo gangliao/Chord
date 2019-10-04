@@ -14,7 +14,7 @@ inline void print_hash(const uint8_t* hash, uint16_t size) {
 
 void Node::create() {
     preccessor = nullptr;
-    successor   = std::make_shared<Node*>(this);
+    successor  = std::make_shared<Node*>(this);
 }
 
 void Node::join(const Node& n) {}
