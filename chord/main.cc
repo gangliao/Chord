@@ -73,9 +73,9 @@ int main(int argc, char* argv[]) {
         ("p,port",  "The port to bind to (required)", cxxopts::value<int16_t>())
         ("ja",      "The IPv4 address of a node whose ring to join", cxxopts::value<std::string>()->default_value("127.0.0.1"))
         ("jp",      "The port of a node whose ring to join (required)", cxxopts::value<int16_t>())
-        ("ts",      "The time in milliseconds between invocations of 'stabilize'", cxxopts::value<int32_t>()->default_value("100"))
-        ("tff",     "The time in milliseconds between invocations of 'fix fingers'", cxxopts::value<int32_t>()->default_value("100"))
-        ("tcp",     "The time in milliseconds between invocations of 'check predecessor'", cxxopts::value<int32_t>()->default_value("100"))
+        ("ts",      "The time in milliseconds between invocations of 'stabilize'", cxxopts::value<int32_t>()->default_value("30000"))
+        ("tff",     "The time in milliseconds between invocations of 'fix fingers'", cxxopts::value<int32_t>()->default_value("1000"))
+        ("tcp",     "The time in milliseconds between invocations of 'check predecessor'", cxxopts::value<int32_t>()->default_value("30000"))
         ("r",       "The number of successors to maintain", cxxopts::value<int32_t>()->default_value("3"))
         ("h,help",  "Print help")
         ("v",       "Enable verbose");
