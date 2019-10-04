@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 
     auto result = options.parse(argc, argv);
 
-    if (result.count("help") || result.count("h") || !result.count("p") || !result.count("jp")) {
+    if (result.count("help") || result.count("h") || (!result.count("p") && !result.count("jp"))) {
         std::cout << options.help({"", "Chord"}) << std::endl;
         exit(0);
     }
