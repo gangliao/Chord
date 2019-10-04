@@ -100,9 +100,9 @@ int main(int argc, char* argv[]) {
         stream >> cmd >> key;
         if (cmd == "Lookup") {
             CHECK_EQ(key.empty(), false);
-            std::cout << node->lookup(key);
+            node->lookup(key);
         } else if (cmd == "PrintState") {
-            std::cout << node->dump();
+            node->dump();
         }
     }
 

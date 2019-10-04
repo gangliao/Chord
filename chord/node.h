@@ -1,26 +1,18 @@
 
 #pragma once
 
-#include <openssl/sha.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include <openssl/sha.h>
+
 #include "chord.h"
-#include "detail/short_alloc.h"
 
 namespace chord {
 class Node {
    public:
-    // Create a vector<T> template with a small buffer of 32 bytes.
-    //   Note for vector it is possible to reduce the alignment requirements
-    //   down to alignof(T) because vector doesn't allocate anything but T's.
-    //   And if we're wrong about that guess, it is a compile-time error, not
-    //   a run time error.
-    template <class T, std::size_t BufSize = 32>
-    using Array = std::vector<T, short_alloc<T, BufSize, alignof(T)>>;
-    Array<Byte>::allocator_type::arena_type a;
-    Array<Byte> id{a};
+    uint8_t id[SHA_DIGEST_LENGTH];
 
    public:
     struct sockaddr_in address;
@@ -40,13 +32,13 @@ class Node {
     void join(const Node& n);
 
     /*! \brief looks up a value from Chord. */
-    std::string lookup(std::string key);
+    void lookup(std::string key);
 
     /*! \brief prints its local state information at the current time. */
-    std::string dump();
+    void dump();
 
    public:
-    inline Array<Byte> getId() { return id; }
+    inline const uint8_t* getId() { return id; }
 
     inline int16_t getPort() { return ntohs(address.sin_port); }
 
@@ -77,9 +69,9 @@ class Node {
     void notify(const Node& n);
 
     /*! \brief asks node to find the successor of id. */
-    Node* findSuccessor(const Array<Byte>& id);
+    Node* findSuccessor(const uint8_t* id);
 
     /*! \brief searches the local table for the highest predecessor of id. */
-    Node* closetPrecedingNode(const Array<Byte>& id);
+    Node* closetPrecedingNode(const uint8_t* id);
 };
 }  // namespace chord
