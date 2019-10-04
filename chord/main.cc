@@ -4,6 +4,7 @@
 
 #include "chord.h"
 #include "common/cxxopts.h"
+#include "common/async_timer_queue.h"
 #include "node.h"
 
 void init_node(const cxxopts::ParseResult& result, chord::Node* node) {
