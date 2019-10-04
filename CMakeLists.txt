@@ -20,4 +20,4 @@ include(external/gtest)
 
 include_directories(${CHORD_SOURCE_DIR})
 
-add_subdirectory(src)
+add_subdirectory(chord)

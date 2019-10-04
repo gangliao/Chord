@@ -16,7 +16,7 @@ FixNamespaceComments: true
 AlignEscapedNewlines: true
 AlignAfterOpenBracket: true
 IndentWidth: 4
-ColumnLimit: 80
+ColumnLimit: 120
 ...
 # ProtoBUF language by Google
 Language: Proto
