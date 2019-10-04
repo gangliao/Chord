@@ -4,7 +4,7 @@
 
 namespace chord {
 
-inline void print_hash(const uint8_t *hash, uint16_t size) {
+inline void print_hash(const uint8_t* hash, uint16_t size) {
     for (int i = 0; i < size; i++) {
         printf("%02x", hash[i]);
     }
@@ -34,7 +34,7 @@ void Node::dump() {
     // The Chord client's own node information
     std::cout << "< Self ";
     print_hash(this->getId(), SHA_DIGEST_LENGTH);
-    std::cout << " " + this->getAddr() + " " + std::to_string(this->getPort());    
+    std::cout << " " + this->getAddr() + " " + std::to_string(this->getPort());
 
     // The node information for all nodes in the successor list
 
