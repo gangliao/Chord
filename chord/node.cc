@@ -12,7 +12,10 @@ inline void print_hash(const uint8_t* hash, uint16_t size) {
     puts("");
 }
 
-void Node::create() {}
+void Node::create() {
+    preccessor = nullptr;
+    successor   = std::make_shared<Node*>(this);
+}
 
 void Node::join(const Node& n) {}
 

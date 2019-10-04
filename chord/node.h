@@ -2,6 +2,7 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -12,14 +13,22 @@
 namespace chord {
 class Node {
    public:
+    // marshalling attributes
     uint8_t id[SHA_DIGEST_LENGTH];
+    std::string addr;
+    std::int16_t port;
+
+   public:
+    int32_t r;
+    std::shared_ptr<Node*> preccessor;
+    std::shared_ptr<Node*> successor;
+    std::vector<std::shared_ptr<Node*>> succ_list;
 
    public:
     struct sockaddr_in address;
     struct sockaddr_in join_address;
 
    public:
-    int32_t r;
     Milliseconds tv_stabilize;
     Milliseconds tv_fix_fingers;
     Milliseconds tv_check_predecessor;
