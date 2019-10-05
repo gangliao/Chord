@@ -1,5 +1,6 @@
 #include "rpc.h"
 #include "chord.h"
+#include "common/net-buffer.h"
 #include "common/socket-util.h"
 
 namespace chord {
@@ -14,10 +15,13 @@ bool rpc_join(int32_t peer_sockfd, chord::Node* node) {
     call.set_args(packed_args);
     CHECK_EQ(call.SerializeToString(&packed_args), true);
 
-    size_t packed_size = packed_args.size();
-    packed_size = packed_size + sizeof(packed_size);
-    
-    if (send_exact(peer_sockfd, (void*)packed_args.c_str(), packed_args.size(), 0) <= 0) {
+    uint64_t packed_size = packed_args.size() + sizeof(packed_size);
+    uint8_t* buffer      = (uint8_t*)malloc(packed_size);
+    memset(buffer, 0, packed_size);
+    *(reinterpret_cast<uint64_t*>(buffer)) = htonll(packed_size);
+    memcpy(buffer + sizeof(uint64_t), packed_args.c_str(), packed_args.size());
+
+    if (send_exact(peer_sockfd, (void*)buffer, packed_size, 0) <= 0) {
         close(peer_sockfd);
         return false;
     }

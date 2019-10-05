@@ -1,4 +1,6 @@
 #include "node.h"
+#include "common/net-buffer.h"
+#include "common/socket-util.h"
 #include "rpc.h"
 
 #include <thread>
@@ -67,7 +69,32 @@ void recv_callback(int32_t server_sockfd) {
             LOG(WARNING) << "accept() failed, moving on to next client";
         } else {
             LOG(INFO) << "Recieved connection from " << inet_ntoa(client_addr.sin_addr);
-            
+            uint8_t* recv_buf = (uint8_t*)malloc(sizeof(uint64_t));
+            NetBuffer net_buf;
+            netbuf_init(&net_buf, recv_buf, sizeof(uint64_t));
+            if (recv_exact(client_sockfd, recv_buf, sizeof(uint64_t), 0) != sizeof(uint64_t)) {
+                LOG(ERROR) << "Invalid hash request header";
+            }
+
+            uint64_t size = 0;
+            read_uint64(&net_buf, &size);
+            uint64_t rest = size - sizeof(uint64_t);
+            recv_buf      = (uint8_t*)malloc(rest);
+            if (recv_exact(client_sockfd, recv_buf, rest, 0) != rest) {
+                LOG(ERROR) << "Invalid hash request header";
+            }
+            protocol::Call call;
+            call.ParseFromArray(recv_buf, rest);
+
+            if (call.name() == "find_successor") {
+
+            } else if (call.name() == "notify") {
+
+            } else if (call.name() == "get_predecessor") {
+
+            } else if (call.name() == "get_successor_list") {
+
+            }
         }
     }
     close(client_sockfd);
