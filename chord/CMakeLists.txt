@@ -7,4 +7,5 @@ cc_binary(chord
          proto/chord.pb.cc
          common/socket-util.cc
          common/net-buffer.cc
+         common/bigint.cc
     DEPS crypto chord_proto)

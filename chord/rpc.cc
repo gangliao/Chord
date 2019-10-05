@@ -13,7 +13,7 @@ const std::string kGetSuccessorList = "get_successor_list";
 }  // namespace
 
 // rpc_join is a blocking request
-bool rpc_send_join(int32_t peer_sockfd, chord::Node* node) {
+bool rpc_send_find_successor(int32_t peer_sockfd, chord::Node* node) {
     protocol::FindSuccessorArgs args;
     args.set_id(node->getId(), SHA_DIGEST_LENGTH);
     std::string packed_args;
@@ -44,13 +44,12 @@ bool rpc_send_join(int32_t peer_sockfd, chord::Node* node) {
     return true;
 }
 
-void rpc_recv_join(const protocol::Call& call, chord::Node* node) {
+void rpc_recv_find_successor(const protocol::Call& call, chord::Node* node) {
     std::string binary = call.args();
     protocol::FindSuccessorArgs args;
     CHECK_EQ(args.ParseFromString(binary), true);
-
     CHECK_EQ(args.has_id(), true);
-    node->findSuccessor((const uint8_t*)args.id().c_str());
+    // node->findSuccessor((const uint8_t*)args.id().c_str());
 }
 
 void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
@@ -82,7 +81,7 @@ void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
             free(recv_buf);
 
             if (call.name() == kFindSuccessor) {
-                rpc_recv_join(call, node);
+                rpc_recv_find_successor(call, node);
             } else if (call.name() == kNotify) {
             } else if (call.name() == kGetPredecessor) {
             } else if (call.name() == kGetSuccessorList) {

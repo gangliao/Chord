@@ -12,9 +12,9 @@ class Node {
 
    public:
     int32_t r;
-    std::shared_ptr<Node*> preccessor;
-    std::shared_ptr<Node*> successor;
-    std::deque<std::shared_ptr<Node*>> succ_list;
+    Node* preccessor;
+    Node* successor;
+    std::deque<Node*> succ_list;
 
    public:
     int32_t server_sockfd;

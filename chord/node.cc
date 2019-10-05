@@ -1,4 +1,5 @@
 #include "node.h"
+#include "common/bigint.h"
 #include "common/net-buffer.h"
 #include "common/socket-util.h"
 #include "rpc.h"
@@ -17,7 +18,7 @@ inline void print_hash(const uint8_t* hash, uint16_t size) {
 
 void Node::create() {
     preccessor = nullptr;
-    successor  = std::make_shared<Node*>(this);
+    successor  = this;
 }
 
 void Node::join() {
@@ -31,7 +32,7 @@ void Node::join() {
         LOG(FATAL) << "Failed to connect to server";
     }
 
-    CHECK_EQ(rpc_send_join(peer_sockfd, this), true) << "Failed to join a Chord ring";
+    CHECK_EQ(rpc_send_find_successor(peer_sockfd, this), true) << "Failed to join a Chord ring";
 }
 
 void Node::lookup(std::string key) {
@@ -76,7 +77,15 @@ void Node::fixFingers() {}
 
 void Node::checkPredecessor() {}
 
-Node* Node::findSuccessor(const uint8_t* id) { return nullptr; }
+Node* Node::findSuccessor(const uint8_t* id) {
+    auto* succ = this->successor;
+    if (within((void*)id, (void*)(this->id), (void*)(succ->id), false, true)) {
+        return this->successor;
+    } else {
+        Node* node = closetPrecedingNode(id);
+        return node->findSuccessor(id);
+    }
+}
 
 Node* Node::closetPrecedingNode(const uint8_t* id) { return nullptr; }
 
