@@ -1,8 +1,5 @@
 #include <iostream>
 
-#include <glog/logging.h>
-#include <openssl/sha.h>
-
 #include "chord.h"
 #include "common/async_timer_queue.h"
 #include "common/cxxopts.h"

@@ -1,8 +1,10 @@
 syntax = "proto2";
 
+package protocol;
+
 message Node {
   required bytes id = 1;
-  required fixed32 address = 2;
+  required string address = 2;
   required uint32 port = 3;
 }
 

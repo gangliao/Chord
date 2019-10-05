@@ -228,9 +228,10 @@ function(_protobuf_generate_cpp SRCS HDRS)
     get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
     get_filename_component(PROTO_CURRENT_SOURCE_DIR ${ABS_FIL} DIRECTORY)
     get_filename_component(FIL_WE ${FIL} NAME_WE)
-    # message(${FIL}) 
+    message(${PROTO_CURRENT_SOURCE_DIR}) 
     set(_protobuf_protoc_src "${PROTO_CURRENT_SOURCE_DIR}/${FIL_WE}.pb.cc")
     set(_protobuf_protoc_hdr "${PROTO_CURRENT_SOURCE_DIR}/${FIL_WE}.pb.h")
+    message(${_protobuf_protoc_hdr})
     list(APPEND ${SRCS} "${_protobuf_protoc_src}")
     list(APPEND ${HDRS} "${_protobuf_protoc_hdr}")
     
@@ -240,7 +241,7 @@ function(_protobuf_generate_cpp SRCS HDRS)
 
       COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}"
       COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} 
-      -I${CMAKE_CURRENT_SOURCE_DIR}
+      -I${PROTO_CURRENT_SOURCE_DIR}
       --cpp_out "${PROTO_CURRENT_SOURCE_DIR}" ${ABS_FIL}
       DEPENDS ${ABS_FIL} protoc
       COMMENT "Running C++ protocol buffer compiler on ${FIL}"

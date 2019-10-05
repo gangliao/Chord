@@ -1,13 +1,6 @@
 
 #pragma once
 
-#include <deque>
-#include <iostream>
-#include <memory>
-#include <string>
-
-#include <openssl/sha.h>
-
 #include "chord.h"
 
 namespace chord {
@@ -30,6 +23,8 @@ class Node {
     struct sockaddr_in join_address;
 
    public:
+    /*! \brief A type for seconds */
+    typedef double Milliseconds;
     Milliseconds tv_stabilize;
     Milliseconds tv_fix_fingers;
     Milliseconds tv_check_predecessor;
@@ -50,9 +45,9 @@ class Node {
    public:
     inline const uint8_t* getId() { return id; }
 
-    inline int16_t getPort() { return ntohs(address.sin_port); }
+    inline const int16_t getPort() { return ntohs(address.sin_port); }
 
-    inline std::string getAddr() { return inet_ntoa(address.sin_addr); }
+    inline const std::string getAddr() { return inet_ntoa(address.sin_addr); }
 
    public:
     void bind_and_listen();

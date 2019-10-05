@@ -1,9 +1,4 @@
 #include "node.h"
-
-#include <fcntl.h>
-#include <glog/logging.h>
-#include <sstream>
-
 #include "rpc.h"
 
 namespace chord {
