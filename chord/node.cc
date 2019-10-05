@@ -4,6 +4,8 @@
 #include <glog/logging.h>
 #include <sstream>
 
+#include "rpc.h"
+
 namespace chord {
 
 inline void print_hash(const uint8_t* hash, uint16_t size) {
@@ -20,7 +22,17 @@ void Node::create() {
 }
 
 void Node::join() {
-    // rpc ip : port call find_successor
+    preccessor = nullptr;
+
+    int32_t peer_sockfd;
+    CHECK_GE(peer_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP), 0) << "Failed to create socket";
+
+    if (connect(peer_sockfd, (struct sockaddr*)&join_address, sizeof(join_address)) < 0) {
+        close(peer_sockfd);
+        LOG(FATAL) << "Failed to connect to server";
+    }
+
+    rpc_join(peer_sockfd, this);
 }
 
 void Node::lookup(std::string key) {
