@@ -11,14 +11,41 @@ const std::string kNotify           = "notify";
 const std::string kGetPredecessor   = "get_predecessor";
 const std::string kGetSuccessorList = "get_successor_list";
 
-uint64_t padding_size(std::string binary, uint8_t* output) {
+bool send_proto(int32_t peer_sockfd, std::string& binary) {
     uint64_t packed_size = binary.size() + sizeof(uint64_t);
-    output               = (uint8_t*)malloc(packed_size);
+    uint8_t* output      = (uint8_t*)malloc(packed_size);
     memset(output, 0, packed_size);
     *(reinterpret_cast<uint64_t*>(output)) = htonll(packed_size);
     memcpy((uint8_t*)output + sizeof(uint64_t), binary.c_str(), binary.size());
-    return packed_size;
+
+    if (send_exact(peer_sockfd, (void*)output, packed_size, 0) <= 0) {
+        close(peer_sockfd);
+        LOG(WARNING) << "Failed to send back";
+        return false;
+    }
+    free(output);
+    return true;
 }
+
+uint64_t recv_proto(int32_t peer_sockfd, uint8_t* recv_buf) {
+    recv_buf = (uint8_t*)malloc(sizeof(uint64_t));
+    NetBuffer net_buf;
+    netbuf_init(&net_buf, recv_buf, sizeof(uint64_t));
+    if (recv_exact(peer_sockfd, recv_buf, sizeof(uint64_t), 0) != sizeof(uint64_t)) {
+        LOG(ERROR) << "Invalid hash request header";
+    }
+
+    uint64_t size = 0;
+    read_uint64(&net_buf, &size);
+    free(recv_buf);
+    uint64_t rest = size - sizeof(uint64_t);
+    recv_buf      = (uint8_t*)malloc(rest);
+    if (recv_exact(peer_sockfd, recv_buf, rest, 0) != rest) {
+        LOG(ERROR) << "Invalid hash request args";
+    }
+    return rest;
+}
+
 }  // namespace
 
 // rpc_join is a blocking request
@@ -33,19 +60,18 @@ bool rpc_send_find_successor(int32_t peer_sockfd, chord::Node* node) {
     call.set_args(packed_args);
     CHECK_EQ(call.SerializeToString(&packed_args), true);
 
-    uint8_t* buffer = nullptr;
-    uint64_t packed_size = padding_size(packed_args, buffer);
-    if (send_exact(peer_sockfd, (void*)buffer, packed_size, 0) <= 0) {
-        close(peer_sockfd);
-        return false;
-    }
-    free(buffer);
-    // size_t val = 0;
-    // if ((val = recv_exact(sockfd, res_buf, 40, 0)) != 40) {
-    //     info_log("Recv %d", val);
-    //     warn_log("Failed to receive hash response");
-    //     return false;
-    // }
+    send_proto(peer_sockfd, packed_args);
+
+    uint8_t* proto_buff = nullptr;
+    uint64_t proto_size = recv_proto(peer_sockfd, proto_buff);
+
+    protocol::FindSuccessorRet ret;
+    CHECK_EQ(ret.ParseFromArray(proto_buff, proto_size), true);
+    CHECK_EQ(ret.has_node(), true);
+    chord::Node* succ = new chord::Node(ret.node());
+    node->successor   = succ;
+
+    free(proto_buff);
     return true;
 }
 
@@ -63,13 +89,7 @@ void rpc_recv_find_successor(int32_t peer_sockfd, const protocol::FindSuccessorA
     ret.set_allocated_node(&n);
     CHECK_EQ(ret.SerializeToString(&packed_args), true);
 
-    uint8_t* buffer = nullptr;
-    uint64_t packed_size = padding_size(packed_args, buffer);
-    if (send_exact(peer_sockfd, (void*)buffer, packed_size, 0) <= 0) {
-        close(peer_sockfd);
-        LOG(WARNING) << "Failed to send FindSuccessorRet";
-    }
-    free(buffer);
+    send_proto(peer_sockfd, packed_args);
 }
 
 void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
@@ -82,24 +102,11 @@ void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
             LOG(WARNING) << "accept() failed, moving on to next client";
         } else {
             LOG(INFO) << "Recieved connection from " << inet_ntoa(client_addr.sin_addr);
-            uint8_t* recv_buf = (uint8_t*)malloc(sizeof(uint64_t));
-            NetBuffer net_buf;
-            netbuf_init(&net_buf, recv_buf, sizeof(uint64_t));
-            if (recv_exact(client_sockfd, recv_buf, sizeof(uint64_t), 0) != sizeof(uint64_t)) {
-                LOG(ERROR) << "Invalid hash request header";
-            }
+            uint8_t* proto_buff = nullptr;
+            uint64_t proto_size = recv_proto(client_sockfd, proto_buff);
 
-            uint64_t size = 0;
-            read_uint64(&net_buf, &size);
-            free(recv_buf);
-            uint64_t rest = size - sizeof(uint64_t);
-            recv_buf      = (uint8_t*)malloc(rest);
-            if (recv_exact(client_sockfd, recv_buf, rest, 0) != rest) {
-                LOG(ERROR) << "Invalid hash request header";
-            }
             protocol::Call call;
-            CHECK_EQ(call.ParseFromArray(recv_buf, rest), true);
-            free(recv_buf);
+            CHECK_EQ(call.ParseFromArray(proto_buff, proto_size), true);
 
             if (call.name() == kFindSuccessor) {
                 std::string binary = call.args();
@@ -110,6 +117,7 @@ void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
             } else if (call.name() == kGetPredecessor) {
             } else if (call.name() == kGetSuccessorList) {
             }
+            free(proto_buff);
         }
     }
     close(client_sockfd);
