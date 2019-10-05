@@ -12,4 +12,6 @@ typedef unsigned char Byte;
 /*! \brief A type for seconds */
 typedef double Milliseconds;
 
+#define MAX_TCP_CONNECTIONS 10
+
 }  // namespace chord

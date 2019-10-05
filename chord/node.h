@@ -1,10 +1,10 @@
 
 #pragma once
 
+#include <deque>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include <openssl/sha.h>
 
@@ -22,9 +22,10 @@ class Node {
     int32_t r;
     std::shared_ptr<Node*> preccessor;
     std::shared_ptr<Node*> successor;
-    std::vector<std::shared_ptr<Node*>> succ_list;
+    std::deque<std::shared_ptr<Node*>> succ_list;
 
    public:
+    int32_t server_sockfd;
     struct sockaddr_in address;
     struct sockaddr_in join_address;
 
@@ -38,7 +39,7 @@ class Node {
     void create();
 
     /*! \brief joins a Chord ring containing node n. */
-    void join(const Node& n);
+    void join();
 
     /*! \brief looks up a value from Chord. */
     void lookup(std::string key);
@@ -54,6 +55,8 @@ class Node {
     inline std::string getAddr() { return inet_ntoa(address.sin_addr); }
 
    public:
+    void bind_and_listen();
+
     /**
      * \brief  verifies its immediate successor, and tells the successor.
      * \note   called periodically.

@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <glog/logging.h>
+#include <openssl/sha.h>
 
 #include "chord.h"
 #include "common/async_timer_queue.h"
@@ -104,10 +105,13 @@ int main(int argc, char* argv[]) {
     chord::AsyncTimerQueue::Instance().create(node->tv_check_predecessor, true, &chord::Node::checkPredecessor, node);
     chord::AsyncTimerQueue::Instance().create(node->tv_stabilize, true, &chord::Node::stabilize, node);
 
+    // bind and listen to socket (non-blocking)
+    node->bind_and_listen();
+
     if (!result.count("jp")) {
         node->create();
     } else {
-        // node->join();
+        node->join();
     }
 
     std::string line;

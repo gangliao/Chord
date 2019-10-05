@@ -1,5 +1,7 @@
 #include "node.h"
 
+#include <fcntl.h>
+#include <glog/logging.h>
 #include <sstream>
 
 namespace chord {
@@ -17,7 +19,9 @@ void Node::create() {
     successor  = std::make_shared<Node*>(this);
 }
 
-void Node::join(const Node& n) {}
+void Node::join() {
+    // rpc ip : port call find_successor
+}
 
 void Node::lookup(std::string key) {
     // key and its hash value
@@ -42,6 +46,15 @@ void Node::dump() {
     // The node information for all nodes in the successor list
 
     // The node information for all nodes in the finger table
+}
+
+void Node::bind_and_listen() {
+    server_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    CHECK_GE(server_sockfd, 0) << "Failed to open socket";
+    CHECK_GE(bind(server_sockfd, (struct sockaddr*)&address, sizeof(address)), 0) << "Failed to bind to port";
+    CHECK_GE(listen(server_sockfd, MAX_TCP_CONNECTIONS), 0) << "Listen failed";
+    CHECK_GE(fcntl(server_sockfd, F_SETFL, fcntl(server_sockfd, F_GETFL, 0) | O_NONBLOCK), 0)
+        << "Failed to set listen socket to non-blocking";
 }
 
 void Node::stabilize() {}
