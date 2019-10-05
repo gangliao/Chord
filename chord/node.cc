@@ -80,7 +80,7 @@ void Node::checkPredecessor() {}
 Node* Node::findSuccessor(const uint8_t* id) {
     auto* succ = this->successor;
     if (within((void*)id, (void*)(this->id), (void*)(succ->id), false, true)) {
-        return this->successor;
+        return succ;
     } else {
         Node* node = closetPrecedingNode(id);
         return node->findSuccessor(id);
