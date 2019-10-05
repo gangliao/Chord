@@ -11,7 +11,7 @@ ssize_t recv_exact(int sockfd, void *buf, size_t len, int flags) {
     size_t total_received = 0;
     ssize_t curr_received;
     while (total_received < len) {
-        if ((curr_received = recv(sockfd, buf + total_received, len - total_received, flags)) <= 0) {
+        if ((curr_received = recv(sockfd, (unsigned char *)buf + total_received, len - total_received, flags)) <= 0) {
             return curr_received;
         } else {
             total_received += curr_received;
@@ -24,7 +24,7 @@ ssize_t send_exact(int sockfd, void *buf, size_t len, int flags) {
     size_t total_sent = 0;
     ssize_t curr_sent;
     while (total_sent < len) {
-        if ((curr_sent = send(sockfd, buf + total_sent, len - total_sent, flags)) <= 0) {
+        if ((curr_sent = send(sockfd, (unsigned char *)buf + total_sent, len - total_sent, flags)) <= 0) {
             return curr_sent;
         } else {
             total_sent += curr_sent;

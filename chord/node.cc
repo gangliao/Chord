@@ -1,6 +1,8 @@
 #include "node.h"
 #include "rpc.h"
 
+#include <thread>
+
 namespace chord {
 
 inline void print_hash(const uint8_t* hash, uint16_t size) {
@@ -27,7 +29,7 @@ void Node::join() {
         LOG(FATAL) << "Failed to connect to server";
     }
 
-    rpc_join(peer_sockfd, this);
+    CHECK_EQ(rpc_join(peer_sockfd, this), true) << "Failed to join a Chord ring";
 }
 
 void Node::lookup(std::string key) {
@@ -55,6 +57,22 @@ void Node::dump() {
     // The node information for all nodes in the finger table
 }
 
+void recv_callback(int32_t server_sockfd) {
+    int32_t client_sockfd;
+    struct sockaddr_in client_addr;
+    socklen_t client_len;
+    while (1) {
+        client_len = sizeof(client_addr);
+        if ((client_sockfd = accept(server_sockfd, (struct sockaddr*)&client_addr, &client_len)) < 0) {
+            LOG(WARNING) << "accept() failed, moving on to next client";
+        } else {
+            LOG(INFO) << "Recieved connection from " << inet_ntoa(client_addr.sin_addr);
+            
+        }
+    }
+    close(client_sockfd);
+}
+
 void Node::bind_and_listen() {
     server_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     CHECK_GE(server_sockfd, 0) << "Failed to open socket";
@@ -62,6 +80,8 @@ void Node::bind_and_listen() {
     CHECK_GE(listen(server_sockfd, MAX_TCP_CONNECTIONS), 0) << "Listen failed";
     CHECK_GE(fcntl(server_sockfd, F_SETFL, fcntl(server_sockfd, F_GETFL, 0) | O_NONBLOCK), 0)
         << "Failed to set listen socket to non-blocking";
+    std::thread thx(recv_callback, server_sockfd);
+    thx.detach();
 }
 
 void Node::stabilize() {}

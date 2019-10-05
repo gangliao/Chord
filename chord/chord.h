@@ -14,4 +14,4 @@
 
 #include "proto/chord.pb.h"
 
-#define MAX_TCP_CONNECTIONS 10
+#define MAX_TCP_CONNECTIONS 40

@@ -96,6 +96,12 @@ int main(int argc, char* argv[]) {
     auto node = new chord::Node();
     init_node(result, node);
 
+    if (!result.count("jp")) {
+        node->create();
+    } else {
+        node->join();
+    }
+
     // called periodically
     std::thread asyncthread(&chord::AsyncTimerQueue::timerLoop, &chord::AsyncTimerQueue::Instance());
     chord::AsyncTimerQueue::Instance().create(node->tv_fix_fingers, true, &chord::Node::fixFingers, node);
@@ -104,12 +110,6 @@ int main(int argc, char* argv[]) {
 
     // bind and listen to socket (non-blocking)
     node->bind_and_listen();
-
-    if (!result.count("jp")) {
-        node->create();
-    } else {
-        node->join();
-    }
 
     std::string line;
     while (1) {

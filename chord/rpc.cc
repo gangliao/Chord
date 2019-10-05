@@ -18,6 +18,13 @@ bool rpc_join(int32_t peer_sockfd, chord::Node* node) {
         close(peer_sockfd);
         return false;
     }
+
+    // size_t val = 0;
+    // if ((val = recv_exact(sockfd, res_buf, 40, 0)) != 40) {
+    //     info_log("Recv %d", val);
+    //     warn_log("Failed to receive hash response");
+    //     return false;
+    // }
     return true;
 }
 }  // namespace chord
