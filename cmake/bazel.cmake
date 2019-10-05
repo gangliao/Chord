@@ -215,13 +215,55 @@ function(cc_testing)
   add_test(${ARGV0} ${ARGV0})
 endfunction(cc_testing)
 
+function(_protobuf_generate_cpp SRCS HDRS)
+  if(NOT ARGN)
+    message(SEND_ERROR "Error: _protobuf_generate_cpp() called without any proto files")
+    return()
+  endif()
+
+  set(${SRCS})
+  set(${HDRS})
+
+  foreach(FIL ${ARGN})
+    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+    get_filename_component(PROTO_CURRENT_SOURCE_DIR ${ABS_FIL} DIRECTORY)
+    get_filename_component(FIL_WE ${FIL} NAME_WE)
+    # message(${FIL}) 
+    set(_protobuf_protoc_src "${PROTO_CURRENT_SOURCE_DIR}/${FIL_WE}.pb.cc")
+    set(_protobuf_protoc_hdr "${PROTO_CURRENT_SOURCE_DIR}/${FIL_WE}.pb.h")
+    list(APPEND ${SRCS} "${_protobuf_protoc_src}")
+    list(APPEND ${HDRS} "${_protobuf_protoc_hdr}")
+    
+    add_custom_command(
+      OUTPUT "${_protobuf_protoc_src}"
+             "${_protobuf_protoc_hdr}"
+
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}"
+      COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} 
+      -I${CMAKE_CURRENT_SOURCE_DIR}
+      --cpp_out "${PROTO_CURRENT_SOURCE_DIR}" ${ABS_FIL}
+      DEPENDS ${ABS_FIL} protoc
+      COMMENT "Running C++ protocol buffer compiler on ${FIL}"
+      VERBATIM)
+  endforeach()
+set_source_files_properties(${${SRCS}} ${${HDRS}} PROPERTIES GENERATED TRUE)
+set(${SRCS} ${${SRCS}} PARENT_SCOPE)
+set(${HDRS} ${${HDRS}} PARENT_SCOPE)
+message(STATUS "Generate Protobuf CPP Source Files: ${${SRCS}}")
+message(STATUS "Generate Protobuf CPP Header Files: ${${HDRS}}")
+endfunction()
+
 function(proto_library)
   set(options STATIC SHARED)
   set(oneValueArgs TAG)
   set(multiValueArgs SRCS DEPS)
   cmake_parse_arguments(proto_library "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  PROTOBUF_GENERATE_CPP(proto_srcs PROTO_HDRS ${proto_library_SRCS})
+
+  # change output to src dir
+  # PROTOBUF_GENERATE_CPP(proto_srcs PROTO_HDRS ${proto_library_SRCS})
+  _protobuf_generate_cpp(proto_srcs PROTO_HDRS ${proto_library_SRCS})
   # including binary directory for generated headers (protobuf hdrs).
-  include_directories(${CMAKE_CURRENT_BINARY_DIR})
+  # include_directories(${CMAKE_CURRENT_BINARY_DIR})
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR})
   cmake_library(${ARGV} SRCS ${proto_srcs} ${PROTO_HDRS} DEPS protobuf TAG cc_lib)
 endfunction(proto_library)

@@ -1,5 +1,6 @@
 cc_library(chord_core
-    SRCS node.cc finger_table.cc successor.cc
+    SRCS node.cc finger_table.cc
+         successor.cc rpc.cc
     DEPS crypto)
 
 proto_library(chord_proto

@@ -41,3 +41,4 @@ build
 
 # Ignore third party
 third_party
+*.pb.*
