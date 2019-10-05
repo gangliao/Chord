@@ -17,12 +17,12 @@ inline void print_hash(const uint8_t* hash, uint16_t size) {
 }
 
 void Node::create() {
-    preccessor = nullptr;
-    successor  = this;
+    predecessor = nullptr;
+    successor   = this;
 }
 
 void Node::join() {
-    preccessor = nullptr;
+    predecessor = nullptr;
 
     int32_t peer_sockfd;
     CHECK_GE(peer_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP), 0) << "Failed to create socket";
@@ -71,15 +71,34 @@ void Node::rpc_server() {
     thx.detach();
 }
 
-void Node::stabilize() {}
+void Node::notify(const Node* n) {}
 
-void Node::fixFingers() {}
+void Node::stabilize() {
+    auto x = successor->predecessor;
+    if (within(x, this->getId(), successor->getId())) {
+        successor = x;
+    }
+    successor->notify(this);
+}
+
+void Node::fixFingers() {
+    static size_t next;
+    next = next + 1;
+    if (next > SHA_DIGEST_LENGTH) {
+        next = 1;
+    }
+
+    uint8_t t[SHA_DIGEST_LENGTH];
+    pow2((next - 1), t);
+    add(this->id, t);
+    finger_table[next] = findSuccessor(t);
+}
 
 void Node::checkPredecessor() {}
 
 Node* Node::findSuccessor(const uint8_t* id) {
     auto* succ = this->successor;
-    if (within((void*)id, (void*)(this->id), (void*)(succ->id))) {
+    if (within(id, this->getId(), successor->getId())) {
         return succ;
     } else {
         Node* node = closetPrecedingNode(id);

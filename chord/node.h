@@ -13,7 +13,7 @@ class Node {
 
    public:
     int32_t r;
-    Node* preccessor;
+    Node* predecessor;
     Node* successor;
     std::deque<Node*> succ_list;
     std::deque<Node*> finger_table;
@@ -84,7 +84,7 @@ class Node {
 
    public:
     /*! \brief n thinks it might be our predecessor. */
-    void notify(const Node& n);
+    void notify(const Node* n);
 
     /*! \brief asks node to find the successor of id. */
     Node* findSuccessor(const uint8_t* id);
