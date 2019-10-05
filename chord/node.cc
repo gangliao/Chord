@@ -31,7 +31,7 @@ void Node::join() {
         LOG(FATAL) << "Failed to connect to server";
     }
 
-    CHECK_EQ(rpc_join(peer_sockfd, this), true) << "Failed to join a Chord ring";
+    CHECK_EQ(rpc_send_join(peer_sockfd, this), true) << "Failed to join a Chord ring";
 }
 
 void Node::lookup(std::string key) {
@@ -59,55 +59,14 @@ void Node::dump() {
     // The node information for all nodes in the finger table
 }
 
-void recv_callback(int32_t server_sockfd) {
-    int32_t client_sockfd;
-    struct sockaddr_in client_addr;
-    socklen_t client_len;
-    while (1) {
-        client_len = sizeof(client_addr);
-        if ((client_sockfd = accept(server_sockfd, (struct sockaddr*)&client_addr, &client_len)) < 0) {
-            LOG(WARNING) << "accept() failed, moving on to next client";
-        } else {
-            LOG(INFO) << "Recieved connection from " << inet_ntoa(client_addr.sin_addr);
-            uint8_t* recv_buf = (uint8_t*)malloc(sizeof(uint64_t));
-            NetBuffer net_buf;
-            netbuf_init(&net_buf, recv_buf, sizeof(uint64_t));
-            if (recv_exact(client_sockfd, recv_buf, sizeof(uint64_t), 0) != sizeof(uint64_t)) {
-                LOG(ERROR) << "Invalid hash request header";
-            }
-
-            uint64_t size = 0;
-            read_uint64(&net_buf, &size);
-            uint64_t rest = size - sizeof(uint64_t);
-            recv_buf      = (uint8_t*)malloc(rest);
-            if (recv_exact(client_sockfd, recv_buf, rest, 0) != rest) {
-                LOG(ERROR) << "Invalid hash request header";
-            }
-            protocol::Call call;
-            call.ParseFromArray(recv_buf, rest);
-
-            if (call.name() == "find_successor") {
-
-            } else if (call.name() == "notify") {
-
-            } else if (call.name() == "get_predecessor") {
-
-            } else if (call.name() == "get_successor_list") {
-
-            }
-        }
-    }
-    close(client_sockfd);
-}
-
-void Node::bind_and_listen() {
+void Node::rpc_server() {
     server_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     CHECK_GE(server_sockfd, 0) << "Failed to open socket";
     CHECK_GE(bind(server_sockfd, (struct sockaddr*)&address, sizeof(address)), 0) << "Failed to bind to port";
     CHECK_GE(listen(server_sockfd, MAX_TCP_CONNECTIONS), 0) << "Listen failed";
     CHECK_GE(fcntl(server_sockfd, F_SETFL, fcntl(server_sockfd, F_GETFL, 0) | O_NONBLOCK), 0)
         << "Failed to set listen socket to non-blocking";
-    std::thread thx(recv_callback, server_sockfd);
+    std::thread thx(rpc_daemon, server_sockfd, this);
     thx.detach();
 }
 

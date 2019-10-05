@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
     chord::AsyncTimerQueue::Instance().create(node->tv_stabilize, true, &chord::Node::stabilize, node);
 
     // bind and listen to socket (non-blocking)
-    node->bind_and_listen();
+    node->rpc_server();
 
     std::string line;
     while (1) {

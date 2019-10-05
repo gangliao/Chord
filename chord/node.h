@@ -49,7 +49,7 @@ class Node {
     inline const std::string getAddr() { return inet_ntoa(address.sin_addr); }
 
    public:
-    void bind_and_listen();
+    void rpc_server();
 
     /**
      * \brief  verifies its immediate successor, and tells the successor.
@@ -70,7 +70,7 @@ class Node {
      */
     void checkPredecessor();
 
-   private:
+   public:
     /*! \brief n thinks it might be our predecessor. */
     void notify(const Node& n);
 
