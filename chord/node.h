@@ -1,12 +1,13 @@
 #pragma once
 
 #include "chord.h"
+#include "common/bigint.h"
 
 namespace chord {
 class Node {
    public:
     // marshalling attributes
-    uint8_t* id;  // [SHA_DIGEST_LENGTH]
+    uint8_t* id;
     std::string addr;
     std::int16_t port;
 
@@ -15,6 +16,7 @@ class Node {
     Node* preccessor;
     Node* successor;
     std::deque<Node*> succ_list;
+    std::deque<Node*> finger_table;
 
    public:
     int32_t server_sockfd;
@@ -27,6 +29,16 @@ class Node {
     Milliseconds tv_stabilize;
     Milliseconds tv_fix_fingers;
     Milliseconds tv_check_predecessor;
+
+   public:
+    Node() { id = new uint8_t[SHA_DIGEST_LENGTH]; }
+    Node(const protocol::Node& node) {
+        id = new uint8_t[SHA_DIGEST_LENGTH];
+        memcpy(id, node.id().c_str(), SHA_DIGEST_LENGTH);
+        addr = node.address();
+        CHECK_GE(inet_pton(AF_INET, addr.c_str(), &address.sin_addr.s_addr), 1) << "Invalid IPv4 address";
+        address.sin_family = AF_INET;
+    }
 
    public:
     /*! \brief creates a new Chord ring. */
@@ -79,15 +91,5 @@ class Node {
 
     /*! \brief searches the local table for the highest predecessor of id. */
     Node* closetPrecedingNode(const uint8_t* id);
-
-   public:
-    Node() { id = new uint8_t[SHA_DIGEST_LENGTH]; }
-    Node(const protocol::Node& node) {
-        id = new uint8_t[SHA_DIGEST_LENGTH];
-        memcpy(id, node.id().c_str(), SHA_DIGEST_LENGTH);
-        addr = node.address();
-        CHECK_GE(inet_pton(AF_INET, addr.c_str(), &address.sin_addr.s_addr), 1) << "Invalid IPv4 address";
-        address.sin_family = AF_INET;
-    }
 };
 }  // namespace chord

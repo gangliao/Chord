@@ -24,10 +24,10 @@ void pow2(uint8_t exponent, uint8_t *dest) {
     dest[BYTES - (exponent / 8) - 1] = 1 << (exponent % 8);
 }
 
-bool within(const void *value, const void *lower, const void *upper, bool lower_inc, bool upper_inc) {
+bool within(const void *value, const void *lower, const void *upper) {
     int lowupp = compare(lower, upper);
     int lowcmp = compare(lower, value), upcmp = compare(value, upper);
-    int lowlim = lower_inc ? 1 : 0, uplim = upper_inc ? 1 : 0;
+    int lowlim = 0, uplim = 1;
 
     if (lowupp < 0)
         return lowcmp < lowlim && upcmp < uplim;

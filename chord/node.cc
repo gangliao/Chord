@@ -79,7 +79,7 @@ void Node::checkPredecessor() {}
 
 Node* Node::findSuccessor(const uint8_t* id) {
     auto* succ = this->successor;
-    if (within((void*)id, (void*)(this->id), (void*)(succ->id), false, true)) {
+    if (within((void*)id, (void*)(this->id), (void*)(succ->id))) {
         return succ;
     } else {
         Node* node = closetPrecedingNode(id);
@@ -87,6 +87,13 @@ Node* Node::findSuccessor(const uint8_t* id) {
     }
 }
 
-Node* Node::closetPrecedingNode(const uint8_t* id) { return nullptr; }
+Node* Node::closetPrecedingNode(const uint8_t* id) {
+    for (int i = finger_table.size() - 1; i >= 0; i--) {
+        if (within(finger_table[i]->getId(), this->getId(), id)) {
+            return finger_table[i];
+        }
+    }
+    return this;
+}
 
 }  // namespace chord
