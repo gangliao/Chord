@@ -132,8 +132,9 @@ void Node::checkPredecessor() {
     CHECK_GE(pred_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP), 0) << "Failed to create socket";
     auto pred = new chord::Node(*predecessor);
 
-    if (connect(pred_sockfd, (struct sockaddr*)&(pred->address), sizeof(pred->address)) < 0) {
+    if (connect(pred_sockfd, (struct sockaddr*)&(pred->address), sizeof(pred->address)) == 0) {
         close(pred_sockfd);
+    } else {
         LOG(WARNING) << "Predecessor has failed";
         predecessor = nullptr;
     }
