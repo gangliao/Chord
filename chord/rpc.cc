@@ -200,13 +200,13 @@ void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
                 CHECK_EQ(args.ParseFromString(binary), true);
                 rpc_recv_find_successor(client_sockfd, args, node);
             } else if (call.name() == kNotify) {
-            } else if (call.name() == kGetPredecessor) {
-                rpc_recv_get_predecessor(client_sockfd, node);
-            } else if (call.name() == kGetSuccessorList) {
                 std::string binary = call.args();
                 protocol::NotifyArgs args;
                 CHECK_EQ(args.ParseFromString(binary), true);
                 rpc_recv_notify(client_sockfd, args, node);
+            } else if (call.name() == kGetPredecessor) {
+                rpc_recv_get_predecessor(client_sockfd, node);
+            } else if (call.name() == kGetSuccessorList) {
             }
             free(proto_buff);
         }
