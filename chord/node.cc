@@ -74,7 +74,20 @@ void Node::rpc_server() {
     thx.detach();
 }
 
-void Node::notify() {}
+void Node::notify() {
+    int32_t peer_sockfd;
+    CHECK_GE(peer_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP), 0) << "Failed to create socket";
+
+    chord::Node* n = new chord::Node(*successor);
+
+    if (connect(peer_sockfd, (struct sockaddr*)&n->address, sizeof(n->address)) < 0) {
+        close(peer_sockfd);
+        LOG(FATAL) << "Failed to connect to server";
+    }
+
+    CHECK_EQ(rpc_send_notify(peer_sockfd, this), true) << "Failed to join a get predecessor";
+    close(peer_sockfd);
+}
 
 protocol::Node* get_predecessor(const protocol::Node& node) {
     int32_t peer_sockfd;

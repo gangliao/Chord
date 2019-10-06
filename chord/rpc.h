@@ -10,4 +10,8 @@ void rpc_recv_find_successor(int32_t peer_sockfd, const protocol::FindSuccessorA
 
 bool rpc_send_get_predecessor(int32_t peer_sockfd, chord::Node* node);
 void rpc_recv_get_predecessor(int32_t peer_sockfd, chord::Node* node);
+
+bool rpc_send_notify(int32_t peer_sockfd, chord::Node* node);
+void rpc_recv_notify(int32_t peer_sockfd, chord::Node* node);
+
 }  // namespace chord

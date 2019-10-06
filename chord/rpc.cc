@@ -140,6 +140,38 @@ void rpc_recv_get_predecessor(int32_t peer_sockfd, chord::Node* node) {
     send_proto(peer_sockfd, packed_args);
 }
 
+bool rpc_send_notify(int32_t peer_sockfd, chord::Node* node) {
+    std::string packed_args;
+
+    protocol::Node n;
+    n.set_address(node->getAddr());
+    n.set_port(node->getPort());
+    n.set_id(node->getId(), SHA_DIGEST_LENGTH);
+
+    protocol::NotifyArgs args;
+    args.set_allocated_node(&n);
+    CHECK_EQ(args.SerializeToString(&packed_args), true);
+
+    protocol::Call call;
+    call.set_name(kNotify);
+    call.set_args(packed_args);
+    CHECK_EQ(call.SerializeToString(&packed_args), true);
+
+    send_proto(peer_sockfd, packed_args);
+
+    uint8_t* proto_buff = nullptr;
+    uint64_t proto_size = recv_proto(peer_sockfd, proto_buff);
+
+    protocol::Return ret;
+    CHECK_EQ(ret.ParseFromArray(proto_buff, proto_size), true);
+    CHECK_EQ(ret.success(), true);
+
+    free(proto_buff);
+    return true;
+}
+
+void rpc_recv_notify(int32_t peer_sockfd, chord::Node* node) {}
+
 void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
     int32_t client_sockfd;
     struct sockaddr_in client_addr;
