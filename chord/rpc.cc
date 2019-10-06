@@ -82,7 +82,7 @@ void rpc_recv_find_successor(int32_t peer_sockfd, const protocol::FindSuccessorA
     CHECK_EQ(args.has_id(), true);
     chord::Node* succ = node->findSuccessor((const uint8_t*)args.id().c_str());
 
-    protocol::Node* n = new protocol::Node();
+    std::shared_ptr<protocol::Node> n(new protocol::Node());
     n->set_address(succ->getAddr());
     n->set_port(succ->getPort());
     std::string s(succ->getId(), succ->getId() + SHA_DIGEST_LENGTH);
@@ -90,7 +90,7 @@ void rpc_recv_find_successor(int32_t peer_sockfd, const protocol::FindSuccessorA
 
     std::string packed_args;
     protocol::FindSuccessorRet fsret;
-    fsret.set_allocated_node(n);
+    fsret.set_allocated_node(n.get());
     CHECK_EQ(fsret.SerializeToString(&packed_args), true);
 
     protocol::Return ret;
@@ -122,7 +122,7 @@ bool rpc_send_get_predecessor(int32_t peer_sockfd, chord::Node* node) {
     protocol::GetPredecessorRet gpret;
     CHECK_EQ(gpret.ParseFromString(ret.value()), true);
     if (gpret.has_node() && gpret.node().has_id()) {
-        node->predecessor = new protocol::Node(gpret.node());
+            node->predecessor = new protocol::Node(gpret.node());
     } else {
         node->predecessor = nullptr;
     }
@@ -188,7 +188,7 @@ void rpc_recv_notify(int32_t peer_sockfd, const protocol::NotifyArgs& args, chor
     }
 
     std::string packed_args;
-    protocol::Return* ret = new protocol::Return();
+    std::shared_ptr<protocol::Return> ret(new protocol::Return());
     ret->set_success(true);
     CHECK_EQ(ret->SerializeToString(&packed_args), true);
     send_proto(peer_sockfd, packed_args);
