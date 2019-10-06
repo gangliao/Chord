@@ -73,6 +73,10 @@ void Node::dump() {
     puts("");
 
     // The node information for all nodes in the successor list
+    std::cout << "< Successor [1] ";
+    print_hash((const uint8_t*)this->successor->id().c_str(), SHA_DIGEST_LENGTH);
+    std::cout << " " + this->successor->address() + " " + std::to_string(this->successor->port());
+    puts("");
 
     // The node information for all nodes in the finger table
     for (int i = 0; i < finger_table.size(); ++i) {
@@ -129,14 +133,14 @@ protocol::Node* get_predecessor(const protocol::Node& node) {
 void Node::stabilize() {
     LOG(INFO) << "[stabilize] called periodically.";
     auto pred = get_predecessor(*successor);
-    if (pred != nullptr && within(pred->id().c_str(), this->getId(), successor->id().c_str())) {
+    if (pred != nullptr && within((const uint8_t *)pred->id().c_str(), this->getId(), (const uint8_t *)successor->id().c_str())) {
         successor = pred;
     }
     notify();
 }
 
 void Node::initFingers() {
-    for (int i = 1; i <= SHA_DIGEST_LENGTH; ++i) {
+    for (int i = 1; i <= SHA_DIGEST_LENGTH * 8; ++i) {
         uint8_t t[SHA_DIGEST_LENGTH];
         pow2((i - 1), t);
         add(this->id, t);
@@ -148,7 +152,7 @@ void Node::fixFingers() {
     LOG(INFO) << "[fix fingers] called periodically.";
     static size_t next;
     next = next + 1;
-    if (next > SHA_DIGEST_LENGTH) {
+    if (next > SHA_DIGEST_LENGTH * 8) {
         next = 1;
     }
 
@@ -178,7 +182,7 @@ void Node::checkPredecessor() {
 }
 
 Node* Node::findSuccessor(const uint8_t* id) {
-    if (within(id, this->getId(), successor->id().c_str())) {
+    if (within(id, this->getId(), (const uint8_t *)successor->id().c_str())) {
         return new chord::Node(*successor);
     } else {
         auto node = closetPrecedingNode(id);
