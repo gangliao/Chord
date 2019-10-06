@@ -18,7 +18,9 @@ inline void print_hash(const uint8_t* hash, uint16_t size) {
 
 void Node::create() {
     predecessor = nullptr;
-    successor   = this;
+    successor->set_address(this->getAddr());
+    successor->set_port(this->getPort());
+    successor->set_id(this->getId(), SHA_DIGEST_LENGTH);
 }
 
 void Node::join() {
@@ -33,6 +35,7 @@ void Node::join() {
     }
 
     CHECK_EQ(rpc_send_find_successor(peer_sockfd, this), true) << "Failed to join a Chord ring";
+    close(peer_sockfd);
 }
 
 void Node::lookup(std::string key) {
@@ -71,14 +74,29 @@ void Node::rpc_server() {
     thx.detach();
 }
 
-void Node::notify(const Node* n) {}
+void Node::notify() {}
+
+protocol::Node* get_predecessor(const protocol::Node& node) {
+    int32_t peer_sockfd;
+    CHECK_GE(peer_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP), 0) << "Failed to create socket";
+
+    chord::Node* n = new chord::Node(node);
+
+    if (connect(peer_sockfd, (struct sockaddr*)&n->address, sizeof(n->address)) < 0) {
+        close(peer_sockfd);
+        LOG(FATAL) << "Failed to connect to server";
+    }
+
+    CHECK_EQ(rpc_send_get_predecessor(peer_sockfd, n), true) << "Failed to join a get predecessor";
+    close(peer_sockfd);
+}
 
 void Node::stabilize() {
-    auto x = successor->predecessor;
-    if (within(x, this->getId(), successor->getId())) {
+    auto x = get_predecessor(*successor);
+    if (within(x->id().c_str(), this->getId(), successor->id().c_str())) {
         successor = x;
     }
-    successor->notify(this);
+    notify();
 }
 
 void Node::fixFingers() {
@@ -97,11 +115,10 @@ void Node::fixFingers() {
 void Node::checkPredecessor() {}
 
 Node* Node::findSuccessor(const uint8_t* id) {
-    auto* succ = this->successor;
-    if (within(id, this->getId(), successor->getId())) {
-        return succ;
+    if (within(id, this->getId(), successor->id().c_str())) {
+        return new chord::Node(*successor);
     } else {
-        Node* node = closetPrecedingNode(id);
+        auto node = closetPrecedingNode(id);
         return node->findSuccessor(id);
     }
 }

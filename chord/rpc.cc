@@ -65,11 +65,14 @@ bool rpc_send_find_successor(int32_t peer_sockfd, chord::Node* node) {
     uint8_t* proto_buff = nullptr;
     uint64_t proto_size = recv_proto(peer_sockfd, proto_buff);
 
-    protocol::FindSuccessorRet ret;
+    protocol::Return ret;
     CHECK_EQ(ret.ParseFromArray(proto_buff, proto_size), true);
-    CHECK_EQ(ret.has_node(), true);
-    chord::Node* succ = new chord::Node(ret.node());
-    node->successor   = succ;
+    CHECK_EQ(ret.success(), true);
+    protocol::FindSuccessorRet fsret;
+    CHECK_EQ(fsret.ParseFromString(ret.value()), true);
+    CHECK_EQ(fsret.has_node(), true);
+
+    *(node->successor) = fsret.node();
 
     free(proto_buff);
     return true;
@@ -85,8 +88,53 @@ void rpc_recv_find_successor(int32_t peer_sockfd, const protocol::FindSuccessorA
     n.set_port(succ->getPort());
 
     std::string packed_args;
-    protocol::FindSuccessorRet ret;
-    ret.set_allocated_node(&n);
+    protocol::FindSuccessorRet fsret;
+    fsret.set_allocated_node(&n);
+    CHECK_EQ(fsret.SerializeToString(&packed_args), true);
+
+    protocol::Return ret;
+    ret.set_success(true);
+    ret.set_value(packed_args);
+    CHECK_EQ(ret.SerializeToString(&packed_args), true);
+
+    send_proto(peer_sockfd, packed_args);
+}
+
+bool rpc_send_get_predecessor(int32_t peer_sockfd, chord::Node* node) {
+    std::string packed_args;
+    protocol::Call call;
+    call.set_name(kGetPredecessor);
+    CHECK_EQ(call.SerializeToString(&packed_args), true);
+
+    send_proto(peer_sockfd, packed_args);
+
+    uint8_t* proto_buff = nullptr;
+    uint64_t proto_size = recv_proto(peer_sockfd, proto_buff);
+
+    protocol::Return ret;
+    CHECK_EQ(ret.ParseFromArray(proto_buff, proto_size), true);
+    CHECK_EQ(ret.success(), true);
+    protocol::GetPredecessorRet gpret;
+    CHECK_EQ(gpret.ParseFromString(ret.value()), true);
+    CHECK_EQ(gpret.has_node(), true);
+
+    *(node->predecessor) = gpret.node();
+
+    free(proto_buff);
+    return true;
+}
+
+void rpc_recv_get_predecessor(int32_t peer_sockfd, chord::Node* node) {
+    protocol::Node* pred = node->predecessor;
+
+    std::string packed_args;
+    protocol::GetPredecessorRet gpret;
+    gpret.set_allocated_node(pred);
+    CHECK_EQ(gpret.SerializeToString(&packed_args), true);
+
+    protocol::Return ret;
+    ret.set_success(true);
+    ret.set_value(packed_args);
     CHECK_EQ(ret.SerializeToString(&packed_args), true);
 
     send_proto(peer_sockfd, packed_args);

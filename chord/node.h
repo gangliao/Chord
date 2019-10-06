@@ -13,8 +13,8 @@ class Node {
 
    public:
     int32_t r;
-    Node* predecessor;
-    Node* successor;
+    protocol::Node* predecessor;
+    protocol::Node* successor;
     std::deque<Node*> succ_list;
     std::deque<Node*> finger_table;
 
@@ -38,6 +38,8 @@ class Node {
         addr = node.address();
         CHECK_GE(inet_pton(AF_INET, addr.c_str(), &address.sin_addr.s_addr), 1) << "Invalid IPv4 address";
         address.sin_family = AF_INET;
+        port               = node.port();
+        address.sin_port   = htons(port);
     }
 
    public:
@@ -83,8 +85,8 @@ class Node {
     void checkPredecessor();
 
    public:
-    /*! \brief n thinks it might be our predecessor. */
-    void notify(const Node* n);
+    /*! \brief this thinks it might be successor's predecessor. */
+    void notify();
 
     /*! \brief asks node to find the successor of id. */
     Node* findSuccessor(const uint8_t* id);
