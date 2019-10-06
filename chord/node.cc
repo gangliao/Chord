@@ -166,11 +166,14 @@ void Node::checkPredecessor() {
         auto pred = new chord::Node(*predecessor);
 
         if (connect(pred_sockfd, (struct sockaddr*)&(pred->address), sizeof(pred->address)) == 0) {
+            rpc_send_check_predecessor(pred_sockfd);
             close(pred_sockfd);
         } else {
             LOG(WARNING) << "Predecessor has failed";
             predecessor = nullptr;
         }
+
+        delete pred;
     }
 }
 

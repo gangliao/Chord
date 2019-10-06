@@ -26,6 +26,10 @@ message NotifyArgs { required Node node = 1; }
 
 message NotifyRet {}
 
+message CheckPredecessorArgs {}
+
+message CheckPredecessorRet {}
+
 message GetPredecessorArgs {}
 
 message GetPredecessorRet { optional Node node = 1; }

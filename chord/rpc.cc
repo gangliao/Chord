@@ -9,6 +9,7 @@ namespace {
 const std::string kFindSuccessor    = "find_successor";
 const std::string kNotify           = "notify";
 const std::string kGetPredecessor   = "get_predecessor";
+const std::string kCheckPredecessor = "check_predecessor";
 const std::string kGetSuccessorList = "get_successor_list";
 
 bool send_proto(int32_t peer_sockfd, std::string& binary) {
@@ -122,7 +123,7 @@ bool rpc_send_get_predecessor(int32_t peer_sockfd, chord::Node* node) {
     protocol::GetPredecessorRet gpret;
     CHECK_EQ(gpret.ParseFromString(ret.value()), true);
     if (gpret.has_node() && gpret.node().has_id()) {
-            node->predecessor = new protocol::Node(gpret.node());
+        node->predecessor = new protocol::Node(gpret.node());
     } else {
         node->predecessor = nullptr;
     }
@@ -194,6 +195,38 @@ void rpc_recv_notify(int32_t peer_sockfd, const protocol::NotifyArgs& args, chor
     send_proto(peer_sockfd, packed_args);
 }
 
+bool rpc_send_check_predecessor(int32_t peer_sockfd) {
+    std::string packed_args;
+
+    protocol::CheckPredecessorArgs args;
+    CHECK_EQ(args.SerializeToString(&packed_args), true);
+
+    protocol::Call call;
+    call.set_name(kCheckPredecessor);
+    call.set_args(packed_args);
+    CHECK_EQ(call.SerializeToString(&packed_args), true);
+
+    send_proto(peer_sockfd, packed_args);
+
+    uint8_t* proto_buff;
+    uint64_t proto_size = recv_proto(peer_sockfd, &proto_buff);
+
+    protocol::Return ret;
+    CHECK_EQ(ret.ParseFromArray(proto_buff, proto_size), true);
+    CHECK_EQ(ret.success(), true);
+
+    free(proto_buff);
+    return true;
+}
+
+void rpc_recv_check_predecessor(int32_t peer_sockfd) {
+    std::string packed_args;
+    std::shared_ptr<protocol::Return> ret(new protocol::Return());
+    ret->set_success(true);
+    CHECK_EQ(ret->SerializeToString(&packed_args), true);
+    send_proto(peer_sockfd, packed_args);
+}
+
 void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
     int32_t client_sockfd;
     struct sockaddr_in client_addr;
@@ -222,6 +255,8 @@ void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
             } else if (call.name() == kGetPredecessor) {
                 rpc_recv_get_predecessor(client_sockfd, node);
             } else if (call.name() == kGetSuccessorList) {
+            } else if (call.name() == kCheckPredecessor) {
+                rpc_recv_check_predecessor(client_sockfd);
             }
             free(proto_buff);
         }
