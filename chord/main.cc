@@ -92,9 +92,9 @@ int main(int argc, char* argv[]) {
         exit(0);
     }
 
+    google::InstallFailureSignalHandler();
     if (!result.count("v")) {
         google::InitGoogleLogging(argv[0]);
-        google::InstallFailureSignalHandler();
     }
 
     // init chord node
@@ -106,11 +106,12 @@ int main(int argc, char* argv[]) {
         node->initFingers();
     } else {
         node->join();
+        node->initFingers();
     }
 
     // called periodically
     std::thread asyncthread(&chord::AsyncTimerQueue::timerLoop, &chord::AsyncTimerQueue::Instance());
-    // chord::AsyncTimerQueue::Instance().create(node->tv_fix_fingers, true, &chord::Node::fixFingers, node);
+    chord::AsyncTimerQueue::Instance().create(node->tv_fix_fingers, true, &chord::Node::fixFingers, node);
     chord::AsyncTimerQueue::Instance().create(node->tv_check_predecessor, true, &chord::Node::checkPredecessor, node);
     chord::AsyncTimerQueue::Instance().create(node->tv_stabilize, true, &chord::Node::stabilize, node);
 

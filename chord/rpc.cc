@@ -52,7 +52,8 @@ uint64_t recv_proto(int32_t peer_sockfd, uint8_t** recv_buf) {
 // rpc_join is a blocking request
 bool rpc_send_find_successor(int32_t peer_sockfd, chord::Node* node) {
     protocol::FindSuccessorArgs args;
-    args.set_id(node->getId(), SHA_DIGEST_LENGTH);
+    std::string s(node->getId(), node->getId() + SHA_DIGEST_LENGTH);
+    args.set_id(s);
     std::string packed_args;
     CHECK_EQ(args.SerializeToString(&packed_args), true);
 
@@ -73,7 +74,8 @@ bool rpc_send_find_successor(int32_t peer_sockfd, chord::Node* node) {
     CHECK_EQ(fsret.ParseFromString(ret.value()), true);
     CHECK_EQ(fsret.has_node(), true);
 
-    *(node->successor) = fsret.node();
+    node->successor = new protocol::Node(fsret.node());
+    // *(node->successor) = fsret.node();
 
     free(proto_buff);
     return true;
@@ -83,7 +85,7 @@ void rpc_recv_find_successor(int32_t peer_sockfd, const protocol::FindSuccessorA
     CHECK_EQ(args.has_id(), true);
     chord::Node* succ = node->findSuccessor((const uint8_t*)args.id().c_str());
 
-    std::shared_ptr<protocol::Node> n(new protocol::Node());
+    protocol::Node* n = new protocol::Node();
     n->set_address(succ->getAddr());
     n->set_port(succ->getPort());
     std::string s(succ->getId(), succ->getId() + SHA_DIGEST_LENGTH);
@@ -91,7 +93,7 @@ void rpc_recv_find_successor(int32_t peer_sockfd, const protocol::FindSuccessorA
 
     std::string packed_args;
     protocol::FindSuccessorRet fsret;
-    fsret.set_allocated_node(n.get());
+    fsret.set_allocated_node(n);
     CHECK_EQ(fsret.SerializeToString(&packed_args), true);
 
     protocol::Return ret;
