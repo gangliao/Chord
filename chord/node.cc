@@ -12,8 +12,6 @@ inline void print_hash(const uint8_t* hash, uint16_t size) {
     for (int i = 0; i < size; i++) {
         printf("%02x", hash[i]);
     }
-    /* Print newline */
-    puts("");
 }
 
 void Node::create() {
@@ -44,6 +42,7 @@ void Node::lookup(std::string key) {
     SHA1((const uint8_t*)key.c_str(), key.size(), hash);
     std::cout << "< " + key + " ";
     print_hash(hash, SHA_DIGEST_LENGTH);
+    puts("");
 
     // The successor client's node information
     Node* succ = this->findSuccessor(hash);
@@ -57,10 +56,17 @@ void Node::dump() {
     std::cout << "< Self ";
     print_hash(this->getId(), SHA_DIGEST_LENGTH);
     std::cout << " " + this->getAddr() + " " + std::to_string(this->getPort());
+    puts("");
 
     // The node information for all nodes in the successor list
 
     // The node information for all nodes in the finger table
+    for (int i = 0; i < finger_table.size(); ++i) {
+        std::cout << "< Finger [" << i + 1 << "] ";
+        print_hash(finger_table[i]->getId(), SHA_DIGEST_LENGTH);
+        std::cout << " " + finger_table[i]->getAddr() + " " + std::to_string(finger_table[i]->getPort());
+        puts("");
+    }
 }
 
 void Node::rpc_server() {

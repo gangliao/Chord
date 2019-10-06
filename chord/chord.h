@@ -6,6 +6,7 @@
 #include <glog/logging.h>
 #include <openssl/sha.h>
 #include <time.h>
+#include <algorithm>
 #include <deque>
 #include <iostream>
 #include <memory>
