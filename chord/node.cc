@@ -153,7 +153,7 @@ void Node::fixFingers() {
     uint8_t t[SHA_DIGEST_LENGTH];
     pow2((next - 1), t);
     add(this->id, t);
-    finger_table[next] = findSuccessor(t);
+    finger_table.push_back(findSuccessor(t));
 }
 
 void Node::checkPredecessor() {
