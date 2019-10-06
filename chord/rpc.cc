@@ -172,7 +172,8 @@ bool rpc_send_notify(int32_t peer_sockfd, chord::Node* node) {
 
 void rpc_recv_notify(int32_t peer_sockfd, const protocol::NotifyArgs& args, chord::Node* node) {
     protocol::Node n = args.node();
-    if (!node->predecessor->has_id() || within(n.id().c_str(), node->predecessor->id().c_str(), node->getId())) {
+    if (node->predecessor = nullptr || !node->predecessor->has_id() ||
+                            within(n.id().c_str(), node->predecessor->id().c_str(), node->getId())) {
         node->predecessor = &n;
     }
 }

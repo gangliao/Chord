@@ -127,7 +127,17 @@ void Node::fixFingers() {
     finger_table[next] = findSuccessor(t);
 }
 
-void Node::checkPredecessor() {}
+void Node::checkPredecessor() {
+    int32_t pred_sockfd;
+    CHECK_GE(pred_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP), 0) << "Failed to create socket";
+    auto pred = new chord::Node(*predecessor);
+
+    if (connect(pred_sockfd, (struct sockaddr*)&(pred->address), sizeof(pred->address)) < 0) {
+        close(pred_sockfd);
+        LOG(WARNING) << "Predecessor has failed";
+        predecessor = nullptr;
+    }
+}
 
 Node* Node::findSuccessor(const uint8_t* id) {
     if (within(id, this->getId(), successor->id().c_str())) {
