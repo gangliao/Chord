@@ -13,11 +13,13 @@ void init_node(const cxxopts::ParseResult& result, chord::Node* node) {
     node->addr               = result["a"].as<std::string>();
 
     // port
-    int16_t port = result["p"].as<int16_t>();
-    CHECK_GE(port, 1024) << "Invalid option for a port, must be greater than or equal to 1024";
-    CHECK_LE(port, 65535) << "Invalid option for a port, must be less than or equal to 65535";
-    node->address.sin_port = htons(port);
-    node->port             = result["p"].as<std::int16_t>();
+    if (result.count("p")) {
+        int16_t port = result["p"].as<int16_t>();
+        CHECK_GE(port, 1024) << "Invalid option for a port, must be greater than or equal to 1024";
+        CHECK_LE(port, 65535) << "Invalid option for a port, must be less than or equal to 65535";
+        node->address.sin_port = htons(port);
+        node->port             = result["p"].as<std::int16_t>();
+    }
 
     // join address
     CHECK_GE(inet_pton(AF_INET, result["ja"].as<std::string>().c_str(), &node->join_address.sin_addr.s_addr), 1)
@@ -25,10 +27,12 @@ void init_node(const cxxopts::ParseResult& result, chord::Node* node) {
     node->join_address.sin_family = AF_INET;
 
     // join ip
-    port = result["jp"].as<int16_t>();
-    CHECK_GE(port, 1024) << "Invalid option for a port, must be greater than or equal to 1024";
-    CHECK_LE(port, 65535) << "Invalid option for a port, must be less than or equal to 65535";
-    node->join_address.sin_port = htons(port);
+    if (result.count("jp")) {
+        int16_t port = result["jp"].as<int16_t>();
+        CHECK_GE(port, 1024) << "Invalid option for a port, must be greater than or equal to 1024";
+        CHECK_LE(port, 65535) << "Invalid option for a port, must be less than or equal to 65535";
+        node->join_address.sin_port = htons(port);
+    }
 
     // stabilize time
     int32_t ts = result["ts"].as<int32_t>();
@@ -62,9 +66,6 @@ void init_node(const cxxopts::ParseResult& result, chord::Node* node) {
     // id = hash(ip:port)
     std::string ip_port = result["a"].as<std::string>() + ":" + std::to_string(result["p"].as<int16_t>());
     SHA1((const uint8_t*)ip_port.c_str(), ip_port.size(), node->id);
-
-    // after id is initialized, init fingers
-    node->initFingers();
 }
 
 int main(int argc, char* argv[]) {
@@ -92,7 +93,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (!result.count("v")) {
-        google::InitGoogleLogging(argv[0]);
+        ::google::InitGoogleLogging(argv[0]);
     }
 
     // init chord node
@@ -101,6 +102,7 @@ int main(int argc, char* argv[]) {
 
     if (!result.count("jp")) {
         node->create();
+        node->initFingers();
     } else {
         node->join();
     }

@@ -185,7 +185,7 @@ void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
     while (1) {
         client_len = sizeof(client_addr);
         if ((client_sockfd = accept(server_sockfd, (struct sockaddr*)&client_addr, &client_len)) < 0) {
-            LOG(WARNING) << "accept() failed, moving on to next client";
+            continue;
         } else {
             LOG(INFO) << "Recieved connection from " << inet_ntoa(client_addr.sin_addr);
             uint8_t* proto_buff = nullptr;

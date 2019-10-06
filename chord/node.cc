@@ -28,6 +28,7 @@ Node::Node(const protocol::Node& node) {
 
 void Node::create() {
     predecessor = nullptr;
+    successor = new protocol::Node();
     successor->set_address(this->getAddr());
     successor->set_port(this->getPort());
     successor->set_id(this->getId(), SHA_DIGEST_LENGTH);
@@ -61,6 +62,7 @@ void Node::lookup(std::string key) {
     std::cout << "< ";
     print_hash(succ->getId(), SHA_DIGEST_LENGTH);
     std::cout << " " + succ->getAddr() + " " + std::to_string(succ->getPort());
+    puts("");
 }
 
 void Node::dump() {
@@ -137,7 +139,7 @@ void Node::initFingers() {
         uint8_t t[SHA_DIGEST_LENGTH];
         pow2((i - 1), t);
         add(this->id, t);
-        finger_table[i] = findSuccessor(t);
+        finger_table.push_back(findSuccessor(t));
     }
 }
 
