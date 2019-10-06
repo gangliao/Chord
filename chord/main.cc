@@ -125,7 +125,9 @@ int main(int argc, char* argv[]) {
         std::string key;
         stream >> cmd >> key;
         if (cmd == "Lookup") {
-            CHECK_EQ(key.empty(), false);
+            if (key.empty()) {
+                continue;
+            }
             node->lookup(key);
         } else if (cmd == "PrintState") {
             node->dump();

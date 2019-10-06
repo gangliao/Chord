@@ -127,6 +127,7 @@ protocol::Node* get_predecessor(const protocol::Node& node) {
 }
 
 void Node::stabilize() {
+    LOG(INFO) << "[stabilize] called periodically.";
     auto pred = get_predecessor(*successor);
     if (within(pred->id().c_str(), this->getId(), successor->id().c_str())) {
         successor = pred;
@@ -144,6 +145,7 @@ void Node::initFingers() {
 }
 
 void Node::fixFingers() {
+    LOG(INFO) << "[fix fingers] called periodically.";
     static size_t next;
     next = next + 1;
     if (next > SHA_DIGEST_LENGTH) {
@@ -157,6 +159,7 @@ void Node::fixFingers() {
 }
 
 void Node::checkPredecessor() {
+    LOG(INFO) << "[checkPredecessor] called periodically.";
     int32_t pred_sockfd;
     CHECK_GE(pred_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP), 0) << "Failed to create socket";
     auto pred = new chord::Node(*predecessor);
