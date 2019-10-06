@@ -82,14 +82,15 @@ void rpc_recv_find_successor(int32_t peer_sockfd, const protocol::FindSuccessorA
     CHECK_EQ(args.has_id(), true);
     chord::Node* succ = node->findSuccessor((const uint8_t*)args.id().c_str());
 
-    protocol::Node n;
-    n.set_id(succ->getId(), SHA_DIGEST_LENGTH);
-    n.set_address(succ->getAddr());
-    n.set_port(succ->getPort());
+    protocol::Node* n = new protocol::Node();
+    n->set_address(succ->getAddr());
+    n->set_port(succ->getPort());
+    std::string s(succ->getId(), succ->getId() + SHA_DIGEST_LENGTH);
+    n->set_id(s);
 
     std::string packed_args;
     protocol::FindSuccessorRet fsret;
-    fsret.set_allocated_node(&n);
+    fsret.set_allocated_node(n);
     CHECK_EQ(fsret.SerializeToString(&packed_args), true);
 
     protocol::Return ret;
@@ -117,11 +118,11 @@ bool rpc_send_get_predecessor(int32_t peer_sockfd, chord::Node* node) {
     protocol::Return ret;
     CHECK_EQ(ret.ParseFromArray(proto_buff, proto_size), true);
     CHECK_EQ(ret.success(), true);
+
     protocol::GetPredecessorRet gpret;
     CHECK_EQ(gpret.ParseFromString(ret.value()), true);
-
-    if (gpret.has_node()) {
-        *(node->predecessor) = gpret.node();
+    if (gpret.has_node() && gpret.node().has_id()) {
+        node->predecessor = new protocol::Node(gpret.node());
     } else {
         node->predecessor = nullptr;
     }
@@ -131,12 +132,13 @@ bool rpc_send_get_predecessor(int32_t peer_sockfd, chord::Node* node) {
 }
 
 void rpc_recv_get_predecessor(int32_t peer_sockfd, chord::Node* node) {
-    protocol::Node* pred = node->predecessor;
-
     std::string packed_args;
     protocol::GetPredecessorRet gpret;
-    gpret.set_allocated_node(pred);
 
+    if (node->predecessor != nullptr && node->predecessor->has_id()) {
+        protocol::Node* pred = new protocol::Node(*node->predecessor);
+        gpret.set_allocated_node(pred);
+    }
     CHECK_EQ(gpret.SerializeToString(&packed_args), true);
 
     protocol::Return ret;
@@ -150,13 +152,14 @@ void rpc_recv_get_predecessor(int32_t peer_sockfd, chord::Node* node) {
 bool rpc_send_notify(int32_t peer_sockfd, chord::Node* node) {
     std::string packed_args;
 
-    protocol::Node n;
-    n.set_address(node->getAddr());
-    n.set_port(node->getPort());
-    n.set_id(node->getId(), SHA_DIGEST_LENGTH);
+    protocol::Node* n = new protocol::Node();
+    n->set_address(node->getAddr());
+    n->set_port(node->getPort());
+    std::string s(node->getId(), node->getId() + SHA_DIGEST_LENGTH);
+    n->set_id(s);
 
     protocol::NotifyArgs args;
-    args.set_allocated_node(&n);
+    args.set_allocated_node(n);
     CHECK_EQ(args.SerializeToString(&packed_args), true);
 
     protocol::Call call;
@@ -181,8 +184,14 @@ void rpc_recv_notify(int32_t peer_sockfd, const protocol::NotifyArgs& args, chor
     protocol::Node n = args.node();
     if (node->predecessor == nullptr || !node->predecessor->has_id() ||
         within(n.id().c_str(), node->predecessor->id().c_str(), node->getId())) {
-        node->predecessor = &n;
+        node->predecessor = new protocol::Node(n);
     }
+
+    std::string packed_args;
+    protocol::Return* ret = new protocol::Return();
+    ret->set_success(true);
+    CHECK_EQ(ret->SerializeToString(&packed_args), true);
+    send_proto(peer_sockfd, packed_args);
 }
 
 void rpc_daemon(int32_t server_sockfd, chord::Node* node) {

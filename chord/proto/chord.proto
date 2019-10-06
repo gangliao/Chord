@@ -15,7 +15,7 @@ message Call {
 
 message Return {
   required bool success = 1;
-  required bytes value = 2;
+  optional bytes value = 2;
 }
 
 message FindSuccessorArgs { required bytes id = 1; }
