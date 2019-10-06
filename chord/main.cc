@@ -62,6 +62,9 @@ void init_node(const cxxopts::ParseResult& result, chord::Node* node) {
     // id = hash(ip:port)
     std::string ip_port = result["a"].as<std::string>() + ":" + std::to_string(result["p"].as<int16_t>());
     SHA1((const uint8_t*)ip_port.c_str(), ip_port.size(), node->id);
+
+    // after id is initialized, init fingers
+    node->initFingers();
 }
 
 int main(int argc, char* argv[]) {

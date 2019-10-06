@@ -31,16 +31,9 @@ class Node {
     Milliseconds tv_check_predecessor;
 
    public:
-    Node() { id = new uint8_t[SHA_DIGEST_LENGTH]; }
-    Node(const protocol::Node& node) {
-        id = new uint8_t[SHA_DIGEST_LENGTH];
-        memcpy(id, node.id().c_str(), SHA_DIGEST_LENGTH);
-        addr = node.address();
-        CHECK_GE(inet_pton(AF_INET, addr.c_str(), &address.sin_addr.s_addr), 1) << "Invalid IPv4 address";
-        address.sin_family = AF_INET;
-        port               = node.port();
-        address.sin_port   = htons(port);
-    }
+    Node();
+
+    Node(const protocol::Node& node);
 
    public:
     /*! \brief creates a new Chord ring. */
@@ -70,6 +63,9 @@ class Node {
      * \note   called periodically.
      */
     void stabilize();
+
+    /*! \brief initalize finger tables when this node starts to run. */
+    void initFingers();
 
     /**
      * \brief  refreshes finger table entries. next stores the index of

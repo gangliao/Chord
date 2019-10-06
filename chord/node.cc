@@ -14,6 +14,18 @@ inline void print_hash(const uint8_t* hash, uint16_t size) {
     }
 }
 
+Node::Node() { id = new uint8_t[SHA_DIGEST_LENGTH]; }
+
+Node::Node(const protocol::Node& node) {
+    id = new uint8_t[SHA_DIGEST_LENGTH];
+    memcpy(id, node.id().c_str(), SHA_DIGEST_LENGTH);
+    addr = node.address();
+    CHECK_GE(inet_pton(AF_INET, addr.c_str(), &address.sin_addr.s_addr), 1) << "Invalid IPv4 address";
+    address.sin_family = AF_INET;
+    port               = node.port();
+    address.sin_port   = htons(port);
+}
+
 void Node::create() {
     predecessor = nullptr;
     successor->set_address(this->getAddr());
@@ -118,6 +130,15 @@ void Node::stabilize() {
         successor = pred;
     }
     notify();
+}
+
+void Node::initFingers() {
+    for (int i = 1; i <= SHA_DIGEST_LENGTH; ++i) {
+        uint8_t t[SHA_DIGEST_LENGTH];
+        pow2((i - 1), t);
+        add(this->id, t);
+        finger_table[i] = findSuccessor(t);
+    }
 }
 
 void Node::fixFingers() {
