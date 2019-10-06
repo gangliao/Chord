@@ -89,12 +89,14 @@ protocol::Node* get_predecessor(const protocol::Node& node) {
 
     CHECK_EQ(rpc_send_get_predecessor(peer_sockfd, n), true) << "Failed to join a get predecessor";
     close(peer_sockfd);
+
+    return n->predecessor;
 }
 
 void Node::stabilize() {
-    auto x = get_predecessor(*successor);
-    if (within(x->id().c_str(), this->getId(), successor->id().c_str())) {
-        successor = x;
+    auto pred = get_predecessor(*successor);
+    if (within(pred->id().c_str(), this->getId(), successor->id().c_str())) {
+        successor = pred;
     }
     notify();
 }
