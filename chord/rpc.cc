@@ -170,7 +170,12 @@ bool rpc_send_notify(int32_t peer_sockfd, chord::Node* node) {
     return true;
 }
 
-void rpc_recv_notify(int32_t peer_sockfd, chord::Node* node) {}
+void rpc_recv_notify(int32_t peer_sockfd, const protocol::NotifyArgs& args, chord::Node* node) {
+    protocol::Node n = args.node();
+    if (!node->predecessor->has_id() || within(n.id().c_str(), node->predecessor->id().c_str(), node->getId())) {
+        node->predecessor = &n;
+    }
+}
 
 void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
     int32_t client_sockfd;
@@ -197,6 +202,10 @@ void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
             } else if (call.name() == kGetPredecessor) {
                 rpc_recv_get_predecessor(client_sockfd, node);
             } else if (call.name() == kGetSuccessorList) {
+                std::string binary = call.args();
+                protocol::NotifyArgs args;
+                CHECK_EQ(args.ParseFromString(binary), true);
+                rpc_recv_notify(client_sockfd, args, node);
             }
             free(proto_buff);
         }
