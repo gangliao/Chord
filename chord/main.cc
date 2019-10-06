@@ -109,9 +109,9 @@ int main(int argc, char* argv[]) {
 
     // called periodically
     std::thread asyncthread(&chord::AsyncTimerQueue::timerLoop, &chord::AsyncTimerQueue::Instance());
-    chord::AsyncTimerQueue::Instance().create(node->tv_fix_fingers, true, &chord::Node::fixFingers, node);
+    // chord::AsyncTimerQueue::Instance().create(node->tv_fix_fingers, true, &chord::Node::fixFingers, node);
     chord::AsyncTimerQueue::Instance().create(node->tv_check_predecessor, true, &chord::Node::checkPredecessor, node);
-    chord::AsyncTimerQueue::Instance().create(node->tv_stabilize, true, &chord::Node::stabilize, node);
+    // chord::AsyncTimerQueue::Instance().create(node->tv_stabilize, true, &chord::Node::stabilize, node);
 
     // bind and listen to socket (non-blocking)
     node->rpc_server();
