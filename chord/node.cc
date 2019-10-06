@@ -28,7 +28,7 @@ Node::Node(const protocol::Node& node) {
 
 void Node::create() {
     predecessor = nullptr;
-    successor = new protocol::Node();
+    successor   = new protocol::Node();
     successor->set_address(this->getAddr());
     successor->set_port(this->getPort());
     successor->set_id(this->getId(), SHA_DIGEST_LENGTH);
@@ -88,8 +88,8 @@ void Node::rpc_server() {
     CHECK_GE(server_sockfd, 0) << "Failed to open socket";
     CHECK_GE(bind(server_sockfd, (struct sockaddr*)&address, sizeof(address)), 0) << "Failed to bind to port";
     CHECK_GE(listen(server_sockfd, MAX_TCP_CONNECTIONS), 0) << "Listen failed";
-    CHECK_GE(fcntl(server_sockfd, F_SETFL, fcntl(server_sockfd, F_GETFL, 0) | O_NONBLOCK), 0)
-        << "Failed to set listen socket to non-blocking";
+    // CHECK_GE(fcntl(server_sockfd, F_SETFL, fcntl(server_sockfd, F_GETFL, 0) | O_NONBLOCK), 0)
+    //     << "Failed to set listen socket to non-blocking";
     std::thread thx(rpc_daemon, server_sockfd, this);
     thx.detach();
 }
@@ -129,7 +129,7 @@ protocol::Node* get_predecessor(const protocol::Node& node) {
 void Node::stabilize() {
     LOG(INFO) << "[stabilize] called periodically.";
     auto pred = get_predecessor(*successor);
-    if (within(pred->id().c_str(), this->getId(), successor->id().c_str())) {
+    if (pred != nullptr && within(pred->id().c_str(), this->getId(), successor->id().c_str())) {
         successor = pred;
     }
     notify();
@@ -155,7 +155,7 @@ void Node::fixFingers() {
     uint8_t t[SHA_DIGEST_LENGTH];
     pow2((next - 1), t);
     add(this->id, t);
-    finger_table.push_back(findSuccessor(t));
+    finger_table[next] = findSuccessor(t);
 }
 
 void Node::checkPredecessor() {

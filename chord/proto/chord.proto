@@ -28,7 +28,7 @@ message NotifyRet {}
 
 message GetPredecessorArgs {}
 
-message GetPredecessorRet { required Node node = 1; }
+message GetPredecessorRet { optional Node node = 1; }
 
 message GetSuccessorListArgs { required bytes id = 1; }
 

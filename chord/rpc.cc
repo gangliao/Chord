@@ -27,20 +27,20 @@ bool send_proto(int32_t peer_sockfd, std::string& binary) {
     return true;
 }
 
-uint64_t recv_proto(int32_t peer_sockfd, uint8_t* recv_buf) {
-    recv_buf = (uint8_t*)malloc(sizeof(uint64_t));
+uint64_t recv_proto(int32_t peer_sockfd, uint8_t** recv_buf) {
+    *recv_buf = (uint8_t*)malloc(sizeof(uint64_t));
     NetBuffer net_buf;
-    netbuf_init(&net_buf, recv_buf, sizeof(uint64_t));
-    if (recv_exact(peer_sockfd, recv_buf, sizeof(uint64_t), 0) != sizeof(uint64_t)) {
+    netbuf_init(&net_buf, *recv_buf, sizeof(uint64_t));
+    if (recv_exact(peer_sockfd, *recv_buf, sizeof(uint64_t), 0) != sizeof(uint64_t)) {
         LOG(ERROR) << "Invalid hash request header";
     }
 
     uint64_t size = 0;
     read_uint64(&net_buf, &size);
-    free(recv_buf);
+    free(*recv_buf);
     uint64_t rest = size - sizeof(uint64_t);
-    recv_buf      = (uint8_t*)malloc(rest);
-    if (recv_exact(peer_sockfd, recv_buf, rest, 0) != rest) {
+    *recv_buf     = (uint8_t*)malloc(rest);
+    if (recv_exact(peer_sockfd, *recv_buf, rest, 0) != rest) {
         LOG(ERROR) << "Invalid hash request args";
     }
     return rest;
@@ -62,8 +62,8 @@ bool rpc_send_find_successor(int32_t peer_sockfd, chord::Node* node) {
 
     send_proto(peer_sockfd, packed_args);
 
-    uint8_t* proto_buff = nullptr;
-    uint64_t proto_size = recv_proto(peer_sockfd, proto_buff);
+    uint8_t* proto_buff;
+    uint64_t proto_size = recv_proto(peer_sockfd, &proto_buff);
 
     protocol::Return ret;
     CHECK_EQ(ret.ParseFromArray(proto_buff, proto_size), true);
@@ -103,22 +103,28 @@ void rpc_recv_find_successor(int32_t peer_sockfd, const protocol::FindSuccessorA
 bool rpc_send_get_predecessor(int32_t peer_sockfd, chord::Node* node) {
     std::string packed_args;
     protocol::Call call;
+    protocol::GetPredecessorArgs args;
     call.set_name(kGetPredecessor);
+    args.SerializeToString(&packed_args);
+    call.set_args(packed_args);
     CHECK_EQ(call.SerializeToString(&packed_args), true);
 
     send_proto(peer_sockfd, packed_args);
 
-    uint8_t* proto_buff = nullptr;
-    uint64_t proto_size = recv_proto(peer_sockfd, proto_buff);
+    uint8_t* proto_buff;
+    uint64_t proto_size = recv_proto(peer_sockfd, &proto_buff);
 
     protocol::Return ret;
     CHECK_EQ(ret.ParseFromArray(proto_buff, proto_size), true);
     CHECK_EQ(ret.success(), true);
     protocol::GetPredecessorRet gpret;
     CHECK_EQ(gpret.ParseFromString(ret.value()), true);
-    CHECK_EQ(gpret.has_node(), true);
 
-    *(node->predecessor) = gpret.node();
+    if (gpret.has_node()) {
+        *(node->predecessor) = gpret.node();
+    } else {
+        node->predecessor = nullptr;
+    }
 
     free(proto_buff);
     return true;
@@ -130,6 +136,7 @@ void rpc_recv_get_predecessor(int32_t peer_sockfd, chord::Node* node) {
     std::string packed_args;
     protocol::GetPredecessorRet gpret;
     gpret.set_allocated_node(pred);
+
     CHECK_EQ(gpret.SerializeToString(&packed_args), true);
 
     protocol::Return ret;
@@ -159,8 +166,8 @@ bool rpc_send_notify(int32_t peer_sockfd, chord::Node* node) {
 
     send_proto(peer_sockfd, packed_args);
 
-    uint8_t* proto_buff = nullptr;
-    uint64_t proto_size = recv_proto(peer_sockfd, proto_buff);
+    uint8_t* proto_buff;
+    uint64_t proto_size = recv_proto(peer_sockfd, &proto_buff);
 
     protocol::Return ret;
     CHECK_EQ(ret.ParseFromArray(proto_buff, proto_size), true);
@@ -188,9 +195,8 @@ void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
             continue;
         } else {
             LOG(INFO) << "Recieved connection from " << inet_ntoa(client_addr.sin_addr);
-            uint8_t* proto_buff = nullptr;
-            uint64_t proto_size = recv_proto(client_sockfd, proto_buff);
-
+            uint8_t* proto_buff;
+            uint64_t proto_size = recv_proto(client_sockfd, &proto_buff);
             protocol::Call call;
             CHECK_EQ(call.ParseFromArray(proto_buff, proto_size), true);
 
