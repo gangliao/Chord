@@ -2,6 +2,7 @@
 #include "chord.h"
 #include "common/net-buffer.h"
 #include "common/socket-util.h"
+#include "common/thread_pool.h"
 
 namespace chord {
 
@@ -11,6 +12,8 @@ const std::string kNotify           = "notify";
 const std::string kGetPredecessor   = "get_predecessor";
 const std::string kCheckPredecessor = "check_predecessor";
 const std::string kGetSuccessorList = "get_successor_list";
+
+const int32_t kPoolSize = 32;
 
 bool send_proto(int32_t peer_sockfd, std::string& binary) {
     uint64_t packed_size = binary.size() + sizeof(uint64_t);
@@ -233,34 +236,47 @@ void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
     int32_t client_sockfd;
     struct sockaddr_in client_addr;
     socklen_t client_len;
-    while (1) {
-        client_len = sizeof(client_addr);
-        if ((client_sockfd = accept(server_sockfd, (struct sockaddr*)&client_addr, &client_len)) < 0) {
-            continue;
-        } else {
-            LOG(INFO) << "Recieved connection from " << inet_ntoa(client_addr.sin_addr);
-            uint8_t* proto_buff;
-            uint64_t proto_size = recv_proto(client_sockfd, &proto_buff);
-            protocol::Call call;
-            CHECK_EQ(call.ParseFromArray(proto_buff, proto_size), true);
 
-            if (call.name() == kFindSuccessor) {
-                std::string binary = call.args();
-                protocol::FindSuccessorArgs args;
-                CHECK_EQ(args.ParseFromString(binary), true);
-                rpc_recv_find_successor(client_sockfd, args, node);
-            } else if (call.name() == kNotify) {
-                std::string binary = call.args();
-                protocol::NotifyArgs args;
-                CHECK_EQ(args.ParseFromString(binary), true);
-                rpc_recv_notify(client_sockfd, args, node);
-            } else if (call.name() == kGetPredecessor) {
-                rpc_recv_get_predecessor(client_sockfd, node);
-            } else if (call.name() == kGetSuccessorList) {
-            } else if (call.name() == kCheckPredecessor) {
-                rpc_recv_check_predecessor(client_sockfd);
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(server_sockfd, &readfds);
+
+    threadpool pool(kPoolSize);
+    size_t max_sd = server_sockfd;
+    while (1) {
+        if (select(max_sd + 1, &readfds, NULL, NULL, NULL) < 0) {
+            LOG(WARNING) << "select() failed";
+        }
+        if (FD_ISSET(server_sockfd, &readfds)) {
+            client_len = sizeof(client_addr);
+            client_sockfd = accept(server_sockfd, (struct sockaddr*)&client_addr, &client_len);
+            if (client_sockfd < 0) {
+                continue;
+            } else {
+                LOG(INFO) << "Recieved connection from " << inet_ntoa(client_addr.sin_addr);
+                uint8_t* proto_buff;
+                uint64_t proto_size = recv_proto(client_sockfd, &proto_buff);
+                protocol::Call call;
+                CHECK_EQ(call.ParseFromArray(proto_buff, proto_size), true);
+
+                if (call.name() == kFindSuccessor) {
+                    std::string binary = call.args();
+                    protocol::FindSuccessorArgs args;
+                    CHECK_EQ(args.ParseFromString(binary), true);
+                    pool.AddTask([&] { rpc_recv_find_successor(client_sockfd, args, node); });
+                } else if (call.name() == kNotify) {
+                    std::string binary = call.args();
+                    protocol::NotifyArgs args;
+                    CHECK_EQ(args.ParseFromString(binary), true);
+                    rpc_recv_notify(client_sockfd, args, node);
+                } else if (call.name() == kGetPredecessor) {
+                    pool.AddTask([&] { rpc_recv_get_predecessor(client_sockfd, node); });
+                } else if (call.name() == kGetSuccessorList) {
+                } else if (call.name() == kCheckPredecessor) {
+                    pool.AddTask([&] { rpc_recv_check_predecessor(client_sockfd); });
+                }
+                free(proto_buff);
             }
-            free(proto_buff);
         }
     }
     close(client_sockfd);
