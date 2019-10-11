@@ -17,7 +17,6 @@ include(external/protobuf)
 include(external/openssl)
 include(external/gflags)
 include(external/glog)
-include(external/gtest)
 
 include_directories(${CHORD_SOURCE_DIR})
 
