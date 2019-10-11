@@ -3,7 +3,6 @@ proto_library(chord_proto
 
 cc_binary(chord
     SRCS main.cc node.cc rpc.cc
-         successor.cc
          proto/chord.pb.cc
          common/socket-util.cc
          common/net-buffer.cc
