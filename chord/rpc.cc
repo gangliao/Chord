@@ -248,7 +248,7 @@ void rpc_daemon(int32_t server_sockfd, chord::Node* node) {
             LOG(WARNING) << "select() failed";
         }
         if (FD_ISSET(server_sockfd, &readfds)) {
-            client_len = sizeof(client_addr);
+            client_len    = sizeof(client_addr);
             client_sockfd = accept(server_sockfd, (struct sockaddr*)&client_addr, &client_len);
             if (client_sockfd < 0) {
                 continue;

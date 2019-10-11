@@ -4,14 +4,19 @@
 #include "common/socket-util.h"
 #include "rpc.h"
 
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <thread>
 
 namespace chord {
 
-inline void print_hash(const uint8_t* hash, uint16_t size) {
+inline std::string hash2string(const uint8_t* hash, uint16_t size) {
+    std::stringstream buffer;
     for (int i = 0; i < size; i++) {
-        printf("%02x", hash[i]);
+        buffer << std::hex << std::setfill('0') << std::setw(2) << (int)hash[i];
     }
+    return buffer.str();
 }
 
 Node::Node() { id = new uint8_t[SHA_DIGEST_LENGTH]; }
@@ -54,42 +59,41 @@ void Node::lookup(std::string key) {
     uint8_t hash[SHA_DIGEST_LENGTH];
     SHA1((const uint8_t*)key.c_str(), key.size(), hash);
     std::cout << "< " + key + " ";
-    print_hash(hash, SHA_DIGEST_LENGTH);
+    std::cout << hash2string(hash, SHA_DIGEST_LENGTH);
     puts("");
 
     // The successor client's node information
     Node* succ = this->findSuccessor(hash);
     std::cout << "< ";
-    print_hash(succ->getId(), SHA_DIGEST_LENGTH);
+    std::cout << hash2string(succ->getId(), SHA_DIGEST_LENGTH);
     std::cout << " " + succ->getAddr() + " " + std::to_string(succ->getPort());
     puts("");
 }
 
 void Node::dump() {
     // The Chord client's own node information
-    std::cout << "< Self ";
-    print_hash(this->getId(), SHA_DIGEST_LENGTH);
+    std::cout << "< Self " << hash2string(this->getId(), SHA_DIGEST_LENGTH);
     std::cout << " " + this->getAddr() + " " + std::to_string(this->getPort());
     puts("");
 
     // The node information for all nodes in the successor list
-    std::cout << "< Successor [1] ";
-    print_hash((const uint8_t*)this->successor->id().c_str(), SHA_DIGEST_LENGTH);
+    std::cout << "< Successor [1] " << hash2string((const uint8_t*)this->successor->id().c_str(), SHA_DIGEST_LENGTH);
     std::cout << " " + this->successor->address() + " " + std::to_string(this->successor->port());
     puts("");
 
     // The node information for all nodes in the finger table
     for (int i = 0; i < finger_table.size(); ++i) {
-        std::cout << "< Finger [" << i + 1 << "] ";
-        print_hash(finger_table[i]->getId(), SHA_DIGEST_LENGTH);
+        std::cout << "< Finger [" << i + 1 << "] " << hash2string(finger_table[i]->getId(), SHA_DIGEST_LENGTH);
         std::cout << " " + finger_table[i]->getAddr() + " " + std::to_string(finger_table[i]->getPort());
         puts("");
     }
 }
 
 void Node::rpc_server() {
+    int opt       = 1;
     server_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     CHECK_GE(server_sockfd, 0) << "Failed to open socket";
+    CHECK_GE(setsockopt(server_sockfd, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt)), 0);
     CHECK_GE(bind(server_sockfd, (struct sockaddr*)&address, sizeof(address)), 0) << "Failed to bind to port";
     CHECK_GE(listen(server_sockfd, MAX_TCP_CONNECTIONS), 0) << "Listen failed";
     // CHECK_GE(fcntl(server_sockfd, F_SETFL, fcntl(server_sockfd, F_GETFL, 0) | O_NONBLOCK), 0)
@@ -133,7 +137,8 @@ protocol::Node* get_predecessor(const protocol::Node& node) {
 void Node::stabilize() {
     LOG(INFO) << "[stabilize] called periodically.";
     auto pred = get_predecessor(*successor);
-    if (pred != nullptr && within((const uint8_t *)pred->id().c_str(), this->getId(), (const uint8_t *)successor->id().c_str())) {
+    if (pred != nullptr &&
+        within((const uint8_t*)pred->id().c_str(), this->getId(), (const uint8_t*)successor->id().c_str())) {
         successor = pred;
     }
     notify();
@@ -182,11 +187,26 @@ void Node::checkPredecessor() {
 }
 
 Node* Node::findSuccessor(const uint8_t* id) {
-    if (within(id, this->getId(), (const uint8_t *)successor->id().c_str())) {
+    if (within(id, this->getId(), (const uint8_t*)successor->id().c_str())) {
         return new chord::Node(*successor);
     } else {
         auto node = closetPrecedingNode(id);
-        return node->findSuccessor(id);
+
+        struct sockaddr_in addr;
+        CHECK_GE(inet_pton(AF_INET, node->getAddr().c_str(), &addr.sin_addr.s_addr), 1) << "Invalid IPv4 address";
+        addr.sin_port   = htons(node->getPort());
+        addr.sin_family = AF_INET;
+
+        int32_t peer_sockfd;
+        CHECK_GE(peer_sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP), 0) << "Failed to create socket";
+
+        if (connect(peer_sockfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+            close(peer_sockfd);
+            LOG(FATAL) << "Failed to connect to server";
+        }
+
+        rpc_send_find_successor(peer_sockfd, node);
+        return new chord::Node(*node->successor);
     }
 }
 
