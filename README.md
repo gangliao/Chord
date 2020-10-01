@@ -1,5 +1,4 @@
-## Chord: A Scalable Peer-to-peer Lookup Service for Internet
-Applications
+## Chord: A Scalable Peer-to-peer Lookup Service for Internet Applications
 
 
 
